@@ -7,3 +7,5 @@ Author: Ivan Ricardo
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
 License: What license is it under?
+URL: https://github.com/ivanuricardo/TensorEconometrics
+BugReports: https://github.com/ivanuricardo/TensorEconometrics/issues
