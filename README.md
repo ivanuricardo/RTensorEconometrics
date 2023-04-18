@@ -7,4 +7,16 @@ This repo is designed to include tensor methods for econometric research. A list
 
 - [x] Decomposition algorithm
 - [x] Reconstruction algorithm
-- [] HOOLS integration
+- [ ] Higher Order OLS integration
+
+## Tucker Decomposition
+
+- [x] Higher Order SVD
+- [ ] Higher Order Orthogonal Iteration
+- [ ] Reconstruction algorithm
+
+## Time Series Regressions
+
+- [ ] Matrix Autoregression
+- [ ] Tensor Autoregression
+- [ ] Tensor-on-Tensor Regression
