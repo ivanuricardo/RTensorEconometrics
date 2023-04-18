@@ -1,0 +1,9 @@
+Package: TensorEconometrics
+Type: Package
+Title: Tensor Methods for Econometrics
+Version: 1.0
+Date: 2023-04-18
+Author: Ivan Ricardo
+Maintainer: Who to complain to <yourfault@somewhere.net>
+Description: More about what it does (maybe more than one line)
+License: What license is it under?

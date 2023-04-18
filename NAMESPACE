@@ -1,0 +1,2 @@
+export("cp_als", "reconstruct_cp",
+       "tensor_ip", "tucker_hosvd")
