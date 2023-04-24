@@ -9,3 +9,6 @@ Description: More about what it does (maybe more than one line)
 License: What license is it under?
 URL: https://github.com/ivanuricardo/TensorEconometrics
 BugReports: https://github.com/ivanuricardo/TensorEconometrics/issues
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
