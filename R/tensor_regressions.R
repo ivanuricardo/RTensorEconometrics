@@ -1,61 +1,3 @@
-###### Functions
-library(plyr)
-library(tensor)
-
-#' Unfold an array along a specified dimension
-#'
-#' This function performs the "unfold" or "flatten" operation on a given array
-#' along a specified dimension.
-#'
-#' @param X Input array
-#' @param n Dimension to unfold
-#'
-#' @return Unfolded array
-#'
-#' @examples
-#' X <- array(1:24, dim = c(2, 3, 4))
-#' unfold(X, 2)
-#' returns a matrix with dimensions 3 x 8
-#'
-#' @import plyr
-unfold <- function(X, n) {
-  
-  # Calculate the combined dimension index and number of dimensions
-  idx <- prod(dim(X)[-n])  # combined dimension idx
-  ndims <- length(dim(X))
-  
-  # Create a matrix to store the indices of the flattened array
-  mat <- matrix(nrow = idx , ncol = ndims-1)
-  
-  # Compute indices for each dimension in the matrix
-  for (i in 1:(ndims-1)) {
-    if (i==1) {
-      # Indices for first dimension
-      a <- dim(X)[-n][1]
-      mat[,1] <- rep((1:a), nrow(mat) / a )
-    }
-    else {
-      # Indices for remaining dimensions
-      a <- dim(X)[-n][i]
-      a <- unlist(lapply((1:a), rep, times = prod(dim(X)[-n][1:(i-1)])))
-      mat[,i] <- rep(a, nrow(mat) / length(a))
-    }
-  }
-  
-  # Create a matrix to store the unfolded array
-  result <- matrix(nrow = dim(X)[n], ncol = idx)
-  
-  # Fill the result matrix with values from the original array
-  for (i in 1:ncol(result)) {
-    # Extract indices from the matrix
-    indices <- as.list(mat[i,])
-    # Extract values from the original array using the specified indices
-    result[,i] <- plyr::take(X, (1:ndims)[-n], indices = indices)
-  }
-  
-  # Return the unfolded array
-  result
-}
 
 #' Invert a tensor
 #'
@@ -125,7 +67,7 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
     return(numerator %*% inverted_den)
   } else {
     # Case when numerator is a tensor of higher order
-    ols_hat <- tensor(numerator, inverted_den, (number_dims/2 + 1):number_dims,
+    ols_hat <- tensor(inverted_den, numerator, (number_dims/2 + 1):number_dims,
                       1:(number_dims/2))
     return(ols_hat)
   }

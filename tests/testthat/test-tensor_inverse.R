@@ -1,13 +1,12 @@
-set.seed(20230424)
-
-# Two tensor with correct dimensions, one without
-tensor1 <- array(rnorm(36), dim = c(3,2,3,2))
-tensor2 <- array(rnorm(576), dim = c(2,3,4,2,3,4))
-tensor3 <- array(rnorm(24), dim = c(3,4,2))
-
 
 # Test output is identity
 test_that("product_is_identity", {
+  set.seed(111111)
+  # Two tensor with correct dimensions, one without
+  tensor1 <- array(rnorm(36), dim = c(3,2,3,2))
+  tensor2 <- array(rnorm(576), dim = c(2,3,4,2,3,4))
+  tensor3 <- array(rnorm(24), dim = c(3,4,2))
+
   inverted1 <- tensor_inverse(tensor1)
   inverted2 <- tensor_inverse(tensor2)
   
@@ -28,4 +27,5 @@ test_that("product_is_identity", {
   # Test inverse product
   expect_equal(identity1, matrix(result1, nrow = 6))
   expect_equal(identity2, matrix(result2, nrow = 24))
+  expect_error(tensor_inverse(tensor3))
 })

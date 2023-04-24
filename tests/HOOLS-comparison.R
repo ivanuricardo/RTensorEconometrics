@@ -48,7 +48,7 @@ HOOLS2 <- function(Y, X, obs_dim_Y = 1, obs_dim_X = 1) {
     return(numerator %*% inverted_den)
   } else {
     # Case when numerator is a tensor of higher order
-    ols_hat <- tensor(inverted_den, numerator, (number_dims/2 + 1):number_dims,
+    ols_hat <- tensor(numerator, inverted_den, (number_dims/2 + 1):number_dims,
                       1:(number_dims/2))
     return(ols_hat)
   }
