@@ -1,513 +1,775 @@
-###Functions that operate on Matrices and Arrays
+###Class Definition
 
-load_orl <- function(){
-	faces_tnsr <- NULL
-	tempfile <- tempfile()
-	download.file("https://ndownloader.figshare.com/files/28005765", tempfile)
-	load(tempfile)
-	faces_tnsr
-}
-
-#'List hadamard Product
+#'S4 Class for a Tensor
 #'
-#'Returns the hadamard (element-wise) product from a list of matrices or vectors. Commonly used for n-mode products and various Tensor decompositions.
-#'@name hadamard_list
-#'@rdname hadamard_list
-#'@aliases hadamard_list
-#'@export
-#'@param L list of matrices or vectors
-#'@return matrix that is the hadamard product
-#'@seealso \code{\link{kronecker_list}}, \code{\link{khatri_rao_list}}
-#'@note The modes/dimensions of each element in the list must match.
+#'An S4 class for a tensor with arbitrary number of modes. The Tensor class extends the base 'array' class to include additional tensor manipulation (folding, unfolding, reshaping, subsetting) as well as a formal class definition that enables more explicit tensor algebra.
+#'
+#'@section Slots:
+#' \describe{
+#'	\item{num_modes}{number of modes (integer)}
+#'  \item{modes}{vector of modes (integer), aka sizes/extents/dimensions}
+#'  \item{data}{actual data of the tensor, which can be 'array' or 'vector'}
+#' }
+#'@name Tensor-class
+#'@rdname Tensor-class
+#'@aliases Tensor Tensor-class
+#'@docType class
+#'@exportClass Tensor
+#'@section Methods:
+#'  \describe{
+#'    \item{[}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{[<-}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{matvec}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{dim}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{fnorm}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{head}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{initialize}{\code{signature(.Object = "Tensor")}: ... }
+#'    \item{innerProd}{\code{signature(tnsr1 = "Tensor", tnsr2 = "Tensor")}: ... }
+#'    \item{modeMean}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{modeSum}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{Ops}{\code{signature(e1 = "array", e2 = "Tensor")}: ... }
+#'    \item{Ops}{\code{signature(e1 = "numeric", e2 = "Tensor")}: ... }
+#'    \item{Ops}{\code{signature(e1 = "Tensor", e2 = "array")}: ... }
+#'    \item{Ops}{\code{signature(e1 = "Tensor", e2 = "numeric")}: ... }
+#'    \item{Ops}{\code{signature(e1 = "Tensor", e2 = "Tensor")}: ... }
+#'    \item{print}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{k_unfold}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{show}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{t}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{tail}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{unfold}{\code{signature(tnsr = "Tensor")}: ... }
+#'    \item{tperm}{\code{signature(tnsr = "Tensor")}: ...}
+#'    \item{image}{\code{signature(tnsr = "Tensor")}: ...}
+#'	 }
+#'@author James Li \email{jamesyili@@gmail.com}
+#'@details {This can be seen as a wrapper class to the base \code{array} class. While it is possible to create an instance using \code{new}, it is also possible to do so by passing the data into \code{\link{as.tensor}}.
+#'
+#'Each slot of a Tensor instance can be obtained using \code{@@}.
+#'
+#'The following methods are overloaded for the Tensor class: \code{\link{dim-methods}}, \code{\link{head-methods}}, \code{\link{tail-methods}}, \code{\link{print-methods}}, \code{\link{show-methods}},  element-wise array operations, array subsetting (extract via `['), array subset replacing (replace via `[<-'), and \code{\link{tperm-methods}}, which is a wrapper around the base \code{aperm} method.
+#'
+#'To sum across any one mode of a tenor, use the function \code{\link{modeSum-methods}}. To compute the mean across any one mode, use \code{\link{modeMean-methods}}.
+#'
+#'You can always unfold any Tensor into a matrix, and the \code{\link{unfold-methods}}, \code{\link{k_unfold-methods}}, and \code{\link{matvec-methods}} methods are for that purpose. The output can be kept as a Tensor with 2 modes or a \code{matrix} object. The vectorization function is also provided as \code{vec}. See the attached vignette for a visualization of the different unfoldings.
+#'
+#'Conversion from \code{array}/\code{matrix} to Tensor is facilitated via \code{\link{as.tensor}}. To convert from a Tensor instance, simply invoke \code{@@data}.
+#'
+#'The Frobenius norm of the Tensor is given by \code{\link{fnorm-methods}}, while the inner product between two Tensors (of equal modes) is given by \code{\link{innerProd-methods}}. You can also sum through any one mode to obtain the K-1 Tensor sum using \code{\link{modeSum-methods}}. \code{\link{modeMean-methods}} provides similar functionality to obtain the K-1 Tensor mean. These are primarily meant to be used internally but may be useful in doing statistics with Tensors.
+#'
+#'For Tensors with 3 modes, we also overloaded \code{t} (transpose) defined by Kilmer et.al (2013). See \code{\link{t-methods}}.
+#'
+#'To create a Tensor with i.i.d. random normal(0, 1) entries, see \code{\link{rand_tensor}}.
+#'}
+#'@note All of the decompositions and regression models in this package require a Tensor input.
+#'@references James Li, Jacob Bien, Martin T. Wells (2018). rTensor: An R Package for Multidimensional Array (Tensor) Unfolding, Multiplication, and Decomposition. Journal of Statistical Software, 87(10), 1-31. URL http://www.jstatsoft.org/v087/i10/.
+#'@seealso \code{\link{as.tensor}}
 #'@examples
-#'lizt <- list('mat1' = matrix(runif(40),ncol=4),
-#' 'mat2' = matrix(runif(40),ncol=4),
-#' 'mat3' = matrix(runif(40),ncol=4))
-#'dim(hadamard_list(lizt))
-hadamard_list <- function(L){
-	isvecORmat <- function(x){is.matrix(x) || is.vector(x)}
-	stopifnot(all(unlist(lapply(L,isvecORmat))))
-	retmat <- L[[1]]
-	for (i in 2:length(L)){
-		retmat <- retmat*L[[i]]
-	}
-	retmat
-}
+#'tnsr <- rand_tensor()
+#'class(tnsr)
+#'tnsr
+#'print(tnsr)
+#'dim(tnsr)
+#'tnsr@@num_modes
+#'tnsr@@data
+setClass("Tensor",
+         representation(num_modes = "integer", modes = "integer", data="array"),
+         validity = function(object){
+           num_modes <- object@num_modes
+           modes <- object@modes
+           errors <- character()
+           if (any(modes <= 0)){
+             msg <- "'modes' must contain strictly positive values; if any mode is 1, consider a smaller num_modes"
+             errors <- c(errors, msg)
+           }
+           if(length(errors)==0) TRUE else errors
+         })
 
-#'List Kronecker Product
-#'
-#'Returns the Kronecker product from a list of matrices or vectors. Commonly used for n-mode products and various Tensor decompositions.
-#'@name kronecker_list
-#'@rdname kronecker_list
-#'@aliases kronecker_list
-#'@export
-#'@param L list of matrices or vectors
-#'@return matrix that is the Kronecker product
-#'@seealso \code{\link{hadamard_list}}, \code{\link{khatri_rao_list}}, \code{\link{kronecker}}
-#'@examples
-#'smalllizt <- list('mat1' = matrix(runif(12),ncol=4),
-#' 'mat2' = matrix(runif(12),ncol=4),
-#' 'mat3' = matrix(runif(12),ncol=4))
-#'dim(kronecker_list(smalllizt))
-kronecker_list <- function(L){
-	isvecORmat <- function(x){is.matrix(x) || is.vector(x)}
-	stopifnot(all(unlist(lapply(L,isvecORmat))))
-	retmat <- L[[1]]
-	for(i in 2:length(L)){
-		retmat <- kronecker(retmat,L[[i]])
-	}
-	retmat
-}
+###Generic Definitions
 
-#'Khatri-Rao Product
+#'Tensor Unfolding
 #'
-#'Returns the Khatri-Rao (column-wise Kronecker) product of two matrices. If the inputs are vectors then this is the same as the Kronecker product.
-#'@name khatri_rao
-#'@rdname khatri_rao
-#'@aliases khatri_rao
-#'@export
-#'@param x first matrix
-#'@param y second matrix
-#'@return matrix that is the Khatri-Rao product
-#'@seealso \code{\link{kronecker}}, \code{\link{khatri_rao_list}}
-#'@note The number of columns must match in the two inputs.
-#'@examples
-#'dim(khatri_rao(matrix(runif(12),ncol=4),matrix(runif(12),ncol=4)))
-khatri_rao <- function(x,y){
-	if (!(is.matrix(x)&&is.matrix(y))) stop("Arguments must be matrices.")
-	if (dim(x)[2]!=dim(y)[2]) stop("Arguments must have same number of columns.")
-	retmat <- matrix(0,nrow=dim(x)[1]*dim(y)[1],ncol=dim(x)[2])
-	for (j in 1:ncol(retmat)) retmat[,j] <- kronecker(x[,j],y[,j])
-	retmat
-}
-
-#'List Khatri-Rao Product
+#'Unfolds the tensor into a matrix, with the modes in \code{rs} onto the rows and modes in \code{cs} onto the columns. Note that \code{c(rs,cs)} must have the same elements (order doesn't matter) as \code{x@@modes}. Within the rows and columns, the order of the unfolding is determined by the order of the modes. This convention is consistent with Kolda and Bader (2009).
 #'
-#'Returns the Khatri-Rao product from a list of matrices or vectors. Commonly used for n-mode products and various Tensor decompositions.
-#'@name khatri_rao_list
-#'@rdname khatri_rao_list
-#'@aliases khatri_rao_list
-#'@export
-#'@param L list of matrices or vectors
-#'@param reverse whether or not to reverse the order
-#'@return matrix that is the Khatri-Rao product
-#'@seealso \code{\link{khatri_rao}}
-#'@note The number of columns must match in every element of the input list.
-#'@examples
-#'smalllizt <- list('mat1' = matrix(runif(12),ncol=4),
-#' 'mat2' = matrix(runif(12),ncol=4),
-#' 'mat3' = matrix(runif(12),ncol=4))
-#'dim(khatri_rao_list(smalllizt))
-khatri_rao_list <- function(L,reverse=FALSE){
-	stopifnot(all(unlist(lapply(L,is.matrix))))
-	ncols <- unlist(lapply(L,ncol))
-	stopifnot(length(unique(ncols))==1)
-	ncols <- ncols[1]
-	nrows <- unlist(lapply(L,nrow))
-	retmat <- matrix(0,nrow=prod(nrows),ncol=ncols)
-	if (reverse) L <- rev(L)
-	for(j in 1:ncols){
-			Lj <- lapply(L,function(x) x[,j])
-			retmat[,j] <- kronecker_list(Lj)
-	}
-	retmat
-}
-
-#'Tensor Times Matrix (m-Mode Product)
+#'For Row Space Unfolding or m-mode Unfolding, see \code{\link{rs_unfold-methods}}. For Column Space Unfolding or matvec, see \code{\link{cs_unfold-methods}}.
 #'
-#'Contracted (m-Mode) product between a Tensor of arbitrary number of modes and a matrix. The result is folded back into Tensor.
-#'@name ttm
-#'@rdname ttm
-#'@aliases ttm
-#'@details By definition, \code{rs_unfold(ttm(tnsr,mat),m) = mat\%*\%rs_unfold(tnsr,m)}, so the number of columns in \code{mat} must match the \code{m}th mode of \code{tnsr}. For the math on the m-Mode Product, see Kolda and Bader (2009).
+#'\code{\link{vec-methods}} returns the vectorization of the tensor.
+#'
+#'@details \code{unfold(tnsr,row_idx=NULL,col_idx=NULL)}
 #'@export
-#'@param tnsr Tensor object with K modes
-#'@param mat input matrix with same number columns as the \code{m}th mode of \code{tnsr}
-#'@param m the mode to contract on
-#'@return a Tensor object with K modes
-#'@seealso \code{\link{ttl}}, \code{\link{rs_unfold-methods}}
-#'@note The \code{m}th mode of \code{tnsr} must match the number of columns in \code{mat}. By default, the returned Tensor does not drop any modes equal to 1.
+#'@docType methods
+#'@name unfold-methods
+#'@rdname unfold-methods
+#'@aliases unfold unfold,Tensor-method
 #'@references T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
+#'@param tnsr the Tensor instance
+#'@param row_idx the indices of the modes to map onto the row space
+#'@param col_idx the indices of the modes to map onto the column space
+#'@return matrix with \code{prod(row_idx)} rows and \code{prod(col_idx)} columns
+#'@seealso \code{\link{k_unfold-methods}} and \code{\link{matvec-methods}}
 #'@examples
-#'tnsr <- new("Tensor",3L,c(3L,4L,5L),data=runif(60))
-#'mat <- matrix(runif(50),ncol=5)
-#'ttm(tnsr,mat,m=3)
-ttm<-function(tnsr,mat,m=NULL){
-	stopifnot(is.matrix(mat))
-	if(is.null(m)) stop("m must be specified")
-	mat_dims <- dim(mat)
-	modes_in <- tnsr@modes
-	stopifnot(modes_in[m]==mat_dims[2])
-	modes_out <- modes_in
-	modes_out[m] <- mat_dims[1]
-	tnsr_m <- rs_unfold(tnsr,m=m)@data
-	retarr_m <- mat%*%tnsr_m
-	rs_fold(retarr_m,m=m,modes=modes_out)
-}
+#'tnsr <- rand_tensor()
+#'matT3<-unfold(tnsr,row_idx=2,col_idx=c(3,1))
+setGeneric(name="unfold",
+           def=function(tnsr,row_idx,col_idx){standardGeneric("unfold")})
 
-#'Tensor Times List
+#'Tensor k-mode Unfolding
 #'
-#'Contracted (m-Mode) product between a Tensor of arbitrary number of modes and a list of matrices. The result is folded back into Tensor.
-#'@name ttl
-#'@rdname ttl
-#'@aliases ttl
-#'@details Performs \code{ttm} repeated for a single Tensor and a list of matrices on multiple modes. For instance, suppose we want to do multiply a Tensor object \code{tnsr} with three matrices \code{mat1}, \code{mat2}, \code{mat3} on modes 1, 2, and 3. We could do \code{ttm(ttm(ttm(tnsr,mat1,1),mat2,2),3)}, or we could do \code{ttl(tnsr,list(mat1,mat2,mat3),c(1,2,3))}. The order of the matrices in the list should obviously match the order of the modes. This is a common operation for various Tensor decompositions such as CP and Tucker. For the math on the m-Mode Product, see Kolda and Bader (2009).
+#'Unfolding of a tensor by mapping the kth mode (specified through parameter \code{m}), and all other modes onto the column space. This the most common type of unfolding operation for Tucker decompositions and its variants. Also known as k-mode matricization.
+#'
+#'@docType methods
+#'@name k_unfold-methods
+#'@details \code{k_unfold(tnsr,m=NULL)}
 #'@export
-#'@param tnsr Tensor object with K modes
-#'@param list_mat a list of matrices
-#'@param ms a vector of modes to contract on (order should match the order of \code{list_mat})
-#'@return Tensor object with K modes
-#'@seealso  \code{\link{ttm}}
-#'@note The returned Tensor does not drop any modes equal to 1.
-#'@references T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
+#'@rdname k_unfold-methods
+#'@aliases k_unfold k_unfold,Tensor-method
+####aliases k_unfold,ANY-method
+#'@references T. Kolda and B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
+#'@param tnsr the Tensor instance
+#'@param m the index of the mode to unfold on
+#'@return matrix with \code{x@@modes[m]} rows and \code{prod(x@@modes[-m])} columns
+#'@seealso \code{\link{matvec-methods}} and \code{\link{unfold-methods}}
 #'@examples
-#'tnsr <- new("Tensor",3L,c(3L,4L,5L),data=runif(60))
-#'lizt <- list('mat1' = matrix(runif(30),ncol=3),
-#' 'mat2' = matrix(runif(40),ncol=4),
-#' 'mat3' = matrix(runif(50),ncol=5))
-#'ttl(tnsr,lizt,ms=c(1,2,3))
-ttl<-function(tnsr,list_mat,ms=NULL){
-	if(is.null(ms)||!is.vector(ms)) stop ("m modes must be specified as a vector")
-	if(length(ms)!=length(list_mat)) stop("m modes length does not match list_mat length")
-	num_mats <- length(list_mat)
-	if(length(unique(ms))!=num_mats) warning("consider pre-multiplying matrices for the same m for speed")
-	mat_nrows <- vector("list", num_mats)
-	mat_ncols <- vector("list", num_mats)
-	for(i in 1:num_mats){
-	mat <- list_mat[[i]]
-	m <- ms[i]
-	mat_dims <- dim(mat)
-	modes_in <- tnsr@modes
-	stopifnot(modes_in[m]==mat_dims[2])
-	modes_out <- modes_in
-	modes_out[m] <- mat_dims[1]
-	tnsr_m <- rs_unfold(tnsr,m=m)@data
-	retarr_m <- mat%*%tnsr_m
-	tnsr <- rs_fold(retarr_m,m=m,modes=modes_out)
-	}
-	tnsr
-}
+#'tnsr <- rand_tensor()
+#'matT2<-rs_unfold(tnsr,m=2)
+setGeneric(name="k_unfold",
+           def=function(tnsr,m){standardGeneric("k_unfold")})
 
-#'Tensor Multiplication (T-MULT)
+#'Tensor Matvec Unfolding
 #'
-#'Implements T-MULT based on block circulant matrices (Kilmer et al. 2013) for 3-tensors.
-#'
-#'@details Uses the Fast Fourier Transform (FFT) speed up suggested by Kilmer et al. 2013 instead of explicitly constructing the block circulant matrix. For the mathematical details of T-MULT, see Kilmer et al. (2013).
+#'For 3-tensors only. Stacks the slices along the third mode. This is the prevalent unfolding for T-SVD and T-MULT based on block circulant matrices.
+#'@docType methods
+#'@name matvec-methods
+#'@details \code{matvec(tnsr)}
 #'@export
-#'@name t_mult
-#'@rdname t_mult
-#'@aliases t_mult
+#'@rdname matvec-methods
+#'@aliases matvec matvec,Tensor-method
+#'@references M. Kilmer, K. Braman, N. Hao, and R. Hoover, "Third-order tensors as operators on matrices: a theoretical and computational framework with applications in imaging". SIAM Journal on Matrix Analysis and Applications 2013.
+#'@param tnsr the Tensor instance
+#'@return matrix with \code{prod(x@@modes[-m])} rows and \code{x@@modes[m]} columns
+#'@seealso \code{\link{k_unfold-methods}} and \code{\link{unfold-methods}}
+#'@examples
+#'tnsr <- rand_tensor(c(2,3,4))
+#'matT1<- matvec(tnsr)
+setGeneric(name="matvec",
+           def=function(tnsr){standardGeneric("matvec")})
+
+#'Tensor Row Space Unfolding
+#'
+#'DEPRECATED. Please see \code{\link{k_unfold-methods}} and \code{\link{unfold-methods}}.
+#'
+#'@docType methods
+#'@name rs_unfold-methods
+#'@details \code{rs_unfold(tnsr,m=NULL)}
+#'@param tnsr Tensor instance
+#'@param m mode to be unfolded on
+#'@export
+#'@rdname rs_unfold-methods
+#'@aliases rs_unfold rs_unfold,Tensor-method
+####aliases rs_unfold,ANY-method
+setGeneric(name="rs_unfold",
+           def=function(tnsr,m){standardGeneric("rs_unfold")})
+
+#'Tensor Column Space Unfolding
+#'
+#'DEPRECATED. Please see \code{\link{matvec-methods}} and \code{\link{unfold-methods}}.
+#'
+#'@docType methods
+#'@name cs_unfold-methods
+#'@details \code{cs_unfold(tnsr,m=NULL)}
+#'@param tnsr Tensor instance
+#'@param m mode to be unfolded on
+#'@export
+#'@rdname cs_unfold-methods
+#'@aliases cs_unfold cs_unfold,Tensor-method
+setGeneric(name="cs_unfold",
+           def=function(tnsr,m){standardGeneric("cs_unfold")})
+
+#'Tensor Sum Across Single Mode
+#'
+#'Given a mode for a K-tensor, this returns the K-1 tensor resulting from summing across that particular mode.
+#'
+#'@docType methods
+#'@name modeSum-methods
+#'@details \code{modeSum(tnsr,m=NULL,drop=FALSE)}
+#'@export
+#'@rdname modeSum-methods
+#'@aliases modeSum modeSum,Tensor-method
+#'@param tnsr the Tensor instance
+#'@param m the index of the mode to sum across
+#'@param drop whether or not mode m should be dropped
+#'@return K-1 or K tensor, where \code{K = x@@num_modes}
+#'@seealso \code{\link{modeMean}}
+#'@examples
+#'tnsr <- rand_tensor()
+#'modeSum(tnsr,3,drop=TRUE)
+setGeneric(name="modeSum",
+           def=function(tnsr,m,drop){standardGeneric("modeSum")})
+
+#'Tensor Mean Across Single Mode
+#'
+#'Given a mode for a K-tensor, this returns the K-1 tensor resulting from taking the mean across that particular mode.
+#'
+#'@docType methods
+#'@name modeMean-methods
+#'@details \code{modeMean(tnsr,m=NULL,drop=FALSE)}
+#'@export
+#'@rdname modeMean-methods
+#'@aliases modeMean modeMean,Tensor-method
+#'@param tnsr the Tensor instance
+#'@param m the index of the mode to average across
+#'@param drop whether or not mode m should be dropped
+#'@return K-1 or K Tensor, where \code{K = x@@num_modes}
+#'@seealso \code{\link{modeSum}}
+#'@examples
+#'tnsr <- rand_tensor()
+#'modeMean(tnsr,1,drop=TRUE)
+setGeneric(name="modeMean",
+           def=function(tnsr,m,drop){standardGeneric("modeMean")})
+
+#'Tensor Frobenius Norm
+#'
+#'Returns the Frobenius norm of the Tensor instance.
+#'
+#'@docType methods
+#'@name fnorm-methods
+#'@details \code{fnorm(tnsr)}
+#'@export
+#'@rdname fnorm-methods
+#'@aliases fnorm fnorm,Tensor-method
+#'@param tnsr the Tensor instance
+#'@return numeric Frobenius norm of \code{x}
+#'@examples
+#'tnsr <- rand_tensor()
+#'fnorm(tnsr)
+setGeneric(name="fnorm",
+           def=function(tnsr){standardGeneric("fnorm")})
+
+#'Tensors Inner Product
+#'
+#'Returns the inner product between two Tensors
+#'
+#'@docType methods
+#'@name innerProd-methods
+#'@details \code{innerProd(tnsr1,tnsr2)}
+#'@export
+#'@rdname innerProd-methods
+#'@aliases innerProd innerProd,Tensor,Tensor-method
+#'@param tnsr1 first Tensor instance
+#'@param tnsr2 second Tensor instance
+#'@return inner product between \code{x1} and \code{x2}
+#'@examples
+#'tnsr1 <- rand_tensor()
+#'tnsr2 <- rand_tensor()
+#'innerProd(tnsr1,tnsr2)
+setGeneric(name="innerProd",
+           def=function(tnsr1,tnsr2){standardGeneric("innerProd")})
+
+#'Initializes a Tensor instance
+#'
+#'Not designed to be called by the user. Use \code{as.tensor} instead.
+#'
+#'@docType methods
+#'@name initialize-methods
+#'@rdname initialize-methods
+#'@param .Object the tensor object
+#'@param num_modes number of modes of the tensor
+#'@param modes modes of the tensor
+#'@param data can be vector, matrix, or array
+#'@aliases initialize,Tensor-method
+#'@seealso \code{as.tensor}
+setMethod(f="initialize",
+          signature="Tensor",
+          definition = function(.Object, num_modes=NULL, modes=NULL, data=NULL){
+            if(is.null(num_modes)){
+              if (is.vector(data)) num_modes <- 1L
+              else{num_modes <- length(dim(data))}
+            }
+            if(is.null(modes)){
+              if (is.vector(data)) modes <- length(data)
+              else{modes <- dim(data)}
+            }
+            .Object@num_modes <- num_modes
+            .Object@modes <- modes
+            if (is.vector(data)){
+              .Object@data <- array(data,dim=modes)
+            }else{
+              .Object@data <- data
+            }
+            validObject(.Object)
+            .Object
+          })
+
+###Method Definitions
+options(warn=-1)
+
+#'Mode Getter for Tensor
+#'
+#'Return the vector of modes from a tensor
+#'
+#'@name dim-methods
+#'@details \code{dim(x)}
+#'@export
+#'@aliases dim,Tensor-method
+#'@docType methods
+#'@rdname dim-methods
+#'@param x the Tensor instance
+#'@return an integer vector of the modes associated with \code{x}
+#'@examples
+#'tnsr <- rand_tensor()
+#'dim(tnsr)
+setMethod(f="dim",
+          signature="Tensor",
+          definition=function(x){
+            x@modes
+          })
+
+#'Show for Tensor
+#'
+#'Extend show for Tensor
+#'
+#'@name show-methods
+#'@details \code{show(object)}
+#'@export
+#'@aliases show,Tensor-method
+#'@docType methods
+#'@rdname show-methods
+#'@param object the Tensor instance
+#'@param ... additional parameters to be passed into show()
+#'@seealso \code{\link{print}}
+#'@examples
+#'tnsr <- rand_tensor()
+#'tnsr
+setMethod(f="show",
+          signature="Tensor",
+          definition=function(object){
+            cat("Numeric Tensor of", object@num_modes, "Modes\n", sep=" ")
+            cat("Modes: ", object@modes, "\n", sep=" ")
+            cat("Data: \n")
+            print(head(object@data))
+          })
+
+#'Print for Tensor
+#'
+#'Extend print for Tensor
+#'
+#'@name print-methods
+#'@details \code{print(x,...)}
+#'@export
+#'@aliases print,Tensor-method
+#'@docType methods
+#'@rdname print-methods
+#'@param x the Tensor instance
+#'@param ... additional parameters to be passed into print()
+#'@seealso \code{\link{show}}
+#'@examples
+#'tnsr <- rand_tensor()
+#'print(tnsr)
+setMethod(f="print",
+          signature="Tensor",
+          definition=function(x,...){
+            show(x)
+          })
+
+#'Head for Tensor
+#'
+#'Extend head for Tensor
+#'
+#'@name head-methods
+#'@details \code{head(x,...)}
+#'@export
+#'@aliases head,Tensor-method
+#'@docType methods
+#'@rdname head-methods
+#'@param x the Tensor instance
+#'@param ... additional parameters to be passed into head()
+#'@seealso \code{\link{tail-methods}}
+#'@examples
+#'tnsr <- rand_tensor()
+#'head(tnsr)
+setMethod(f="head",
+          signature="Tensor",
+          definition=function(x,...){
+            head(x@data,...)
+          })
+
+#'Tail for Tensor
+#'
+#'Extend tail for Tensor
+#'
+#'@name tail-methods
+#'@details \code{tail(x,...)}
+#'@export
+#'@aliases tail,Tensor-method
+#'@docType methods
+#'@rdname tail-methods
+#'@param x the Tensor instance
+#'@param ... additional parameters to be passed into tail()
+#'@seealso \code{\link{head-methods}}
+#'@examples
+#'tnsr <- rand_tensor()
+#'tail(tnsr)
+setMethod(f="tail",
+          signature="Tensor",
+          definition=function(x,...){
+            tail(x@data,...)
+          })
+
+#'Extract or Replace Subtensors
+#'
+#'Extends '[' and '[<-' from the base array class for the Tensor class. Works exactly as it would for the base 'array' class.
+#'
+#'@name [-methods
+#'@details \code{x[i,j,...,drop=TRUE]}
+#'@export
+#'@aliases [,Tensor-method extract,Tensor-method [<-,Tensor-method
+#'@docType methods
+#'@rdname extract-methods
+#'@param x Tensor to be subset
+#'@param i,j,... indices that specify the extents of the sub-tensor
+#'@param drop whether or not to reduce the number of modes to exclude those that have '1' as the mode
+#'@param value either vector, matrix, or array that will replace the subtensor
+#'@return an object of class Tensor
+#'@examples
+#'tnsr <- rand_tensor()
+#'tnsr[1,2,3]
+#'tnsr[3,1,]
+#'tnsr[,,5]
+#'tnsr[,,5,drop=FALSE]
+#'
+#'tnsr[1,2,3] <- 3; tnsr[1,2,3]
+#'tnsr[3,1,] <- rep(0,5); tnsr[3,1,]
+#'tnsr[,2,] <- matrix(0,nrow=3,ncol=5); tnsr[,2,]
+setMethod("[", signature="Tensor",
+          definition=function(x,i,j,...,drop=TRUE){
+            if(!drop) as.tensor(`[`(x@data,i,j,drop=FALSE,...),drop=drop)
+            else as.tensor(`[`(x@data,i,j,...))
+          })
+
+#'@aliases [,Tensor-method extract,Tensor-method [<-,Tensor-method
+#'@rdname extract-methods
+setMethod("[<-", signature="Tensor",
+          definition=function(x,i,j,...,value){
+            if (is(value,"Tensor")){
+              as.tensor(`[<-`(x@data,i,j,...,value=value@data))
+            }else{
+              as.tensor(`[<-`(x@data,i,j,...,value=value))
+            }
+          })
+
+#'Tensor Transpose
+#'
+#'Implements the tensor transpose based on block circulant matrices (Kilmer et al. 2013) for 3-tensors.
+#'
+#'@docType methods
+#'@name t-methods
+#'@rdname t-methods
+#'@details \code{t(x)}
+#'@export
+#'@aliases t,Tensor-method
 #'@param x a 3-tensor
-#'@param y another 3-tensor
-#'@return tensor product between \code{x} and \code{y}
-#'@note This only works (so far) between 3-Tensors.
+#'@return tensor transpose of \code{x}
 #'@references M. Kilmer, K. Braman, N. Hao, and R. Hoover, "Third-order tensors as operators on matrices: a theoretical and computational framework with applications in imaging". SIAM Journal on Matrix Analysis and Applications 2013.
 #'@examples
-#'tnsr <- new("Tensor",3L,c(3L,4L,5L),data=runif(60))
-#'tnsr2 <- new("Tensor",3L,c(4L,3L,5L),data=runif(60))
-#'t_mult(tnsr, tnsr2)
-t_mult <- function(x,y){
-	if((x@num_modes>3)||(y@num_modes>3)) stop("Tensor Multiplication currently only implemented for 3-Tensors")
-	modes_x <- x@modes
-	modes_y <- y@modes
-	if(modes_x[2]!=modes_y[1]) stop("Mode 2 of x and Mode 1 of y must match")
-	n3 <- modes_x[3]
-	if(n3!=modes_y[3]) stop("Modes 3 of x and y must match")
-	#fft's for x and y
-	fft_x <- aperm(apply(x@data,MARGIN=1:2,fft),c(2,3,1))
-	fft_y <- aperm(apply(y@data,MARGIN=1:2,fft),c(2,3,1))
-	#multiply the faces (this is terribad! TO-DO: think of better way!)
-	fft_ret <- array(0,dim=c(modes_x[1],modes_y[2],n3))
-	for(i in 1:n3){
-		first <- fft_x[,,i,drop=FALSE]
-		second <- fft_y[,,i,drop=FALSE]
-		fft_ret[,,i]<-matrix(first,nrow=dim(first)[1])%*%matrix(second,,nrow=dim(second)[1])
-	}
-	#ifft and return as Tensor
-	#.ifft <- function(x){suppressWarnings(as.numeric(fft(x,inverse=TRUE))/length(x))}
-	as.tensor(aperm(apply(fft_ret,MARGIN=1:2, .ifft),c(2,3,1)),drop=FALSE)
-}
+#'tnsr <- rand_tensor()
+#'identical(t(tnsr)@@data[,,1],t(tnsr@@data[,,1]))
+#'identical(t(tnsr)@@data[,,2],t(tnsr@@data[,,5]))
+#'identical(t(t(tnsr)),tnsr)
+setMethod("t",signature="Tensor",
+          definition=function(x){
+            tnsr <- x
+            if(tnsr@num_modes!=3) stop("Tensor Transpose currently only implemented for 3d Tensors")
+            modes <- tnsr@modes
+            new_arr <- array(apply(tnsr@data[,,c(1L,modes[3]:2L),drop=FALSE],MARGIN=3,FUN=t),dim=modes[c(2,1,3)])
+            as.tensor(new_arr)
+          })
 
-#####Special Tensors
-
-#'Tensor with Random Entries
+#'Conformable elementwise operators for Tensor
 #'
-#'Generate a Tensor with specified modes with iid normal(0,1) entries.
+#'Overloads elementwise operators for tensors, arrays, and vectors that are conformable (have the same modes).
+#'
 #'@export
-#'@name rand_tensor
-#'@rdname rand_tensor
-#'@aliases rand_tensor
-#'@param modes the modes of the output Tensor
-#'@param drop whether or not modes equal to 1 should be dropped
-#'@return a Tensor object with modes given by \code{modes}
-#'@note Default \code{rand_tensor()} generates a 3-Tensor with modes \code{c(3,4,5)}.
+#'@name Ops-methods
+#'@docType methods
+#'@aliases Ops-methods Ops,Tensor,Tensor-method Ops,Tensor,array-method Ops,Tensor,numeric-method Ops,array,Tensor-method Ops,numeric,Tensor-method
+#'@param e1 left-hand object
+#'@param e2 right-hand object
 #'@examples
-#'rand_tensor()
-#'rand_tensor(c(4,4,4))
-#'rand_tensor(c(10,2,1),TRUE)
-rand_tensor <- function(modes=c(3,4,5),drop=FALSE){
-	as.tensor(array(rnorm(prod(modes)), dim=modes),drop=drop)
+#'tnsr <- rand_tensor(c(3,4,5))
+#'tnsr2 <- rand_tensor(c(3,4,5))
+#'tnsrsum <- tnsr + tnsr2
+#'tnsrdiff <- tnsr - tnsr2
+#'tnsrelemprod <- tnsr * tnsr2
+#'tnsrelemquot <- tnsr / tnsr2
+#'for (i in 1:3L){
+#'	for (j in 1:4L){
+#'		for (k in 1:5L){
+#'			stopifnot(tnsrsum@@data[i,j,k]==tnsr@@data[i,j,k]+tnsr2@@data[i,j,k])
+#'			stopifnot(tnsrdiff@@data[i,j,k]==(tnsr@@data[i,j,k]-tnsr2@@data[i,j,k]))
+#'			stopifnot(tnsrelemprod@@data[i,j,k]==tnsr@@data[i,j,k]*tnsr2@@data[i,j,k])
+#'			stopifnot(tnsrelemquot@@data[i,j,k]==tnsr@@data[i,j,k]/tnsr2@@data[i,j,k])
+#'}
+#'}
+#'}
+setMethod("Ops", signature(e1="Tensor", e2="Tensor"),
+          definition=function(e1,e2){
+            e1@data<-callGeneric(e1@data, e2@data)
+            validObject(e1)
+            e1
+          })
+setMethod("Ops", signature(e1="Tensor", e2="array"),
+          definition=function(e1,e2){
+            e1@data<-callGeneric(e1@data,e2)
+            validObject(e1)
+            e1
+          })
+setMethod("Ops", signature(e1="array", e2="Tensor"),
+          definition=function(e1,e2){
+            e2@data<-callGeneric(e1,e2@data)
+            validObject(e2)
+            e2
+          })
+setMethod("Ops", signature(e1="Tensor", e2="numeric"),
+          definition=function(e1,e2){
+            e1@data<-callGeneric(e1@data,e2)
+            validObject(e1)
+            e1
+          })
+setMethod("Ops", signature(e1="numeric", e2="Tensor"),
+          definition=function(e1,e2){
+            e2@data<-callGeneric(e1,e2@data)
+            validObject(e2)
+            e2
+          })
+
+#'@rdname modeSum-methods
+#'@aliases modeSum,Tensor-method
+setMethod("modeSum",signature="Tensor",
+          definition=function(tnsr,m=NULL,drop=FALSE){
+            if(is.null(m)) stop("must specify mode m")
+            num_modes <- tnsr@num_modes
+            if(m<1||m>num_modes) stop("m out of bounds")
+            perm <- c(m,(1L:num_modes)[-m])
+            modes <- tnsr@modes
+            newmodes <- modes; newmodes[m]<-1
+            arr <- array(colSums(aperm(tnsr@data,perm),dims=1L),dim=newmodes)
+            as.tensor(arr,drop=drop)
+          })
+
+#'@rdname modeMean-methods
+#'@aliases modeMean,Tensor-method
+setMethod("modeMean",signature="Tensor",
+          definition=function(tnsr,m=NULL,drop=FALSE){
+            if(is.null(m)) stop("must specify mode m")
+            num_modes <- tnsr@num_modes
+            if(m<1||m>num_modes) stop("m out of bounds")
+            perm <- c(m,(1L:num_modes)[-m])
+            modes <- tnsr@modes
+            newmodes <- modes; newmodes[m]<-1
+            arr <- array(colSums(aperm(tnsr@data,perm),dims=1L),dim=newmodes)
+            as.tensor(arr/modes[m],drop=drop)
+          })
+
+#'@rdname fnorm-methods
+#'@aliases fnorm,Tensor-method
+setMethod("fnorm",signature="Tensor",
+          definition=function(tnsr){
+            arr<-tnsr@data
+            sqrt(sum(arr*arr))
+          })
+
+#'@rdname innerProd-methods
+#'@aliases innerProd,Tensor,Tensor-method
+setMethod("innerProd",signature=c(tnsr1="Tensor", tnsr2="Tensor"),
+          definition=function(tnsr1,tnsr2){
+            stopifnot(tnsr1@modes==tnsr2@modes)
+            arr1 <- tnsr1@data
+            arr2 <- tnsr2@data
+            sum(as.numeric(arr1*arr2))
+          })
+
+###Tensor Unfoldings
+
+#'@rdname unfold-methods
+#'@aliases unfold,Tensor-method
+setMethod("unfold", signature="Tensor",
+          definition=function(tnsr,row_idx=NULL,col_idx=NULL){
+            #checks
+            rs <- row_idx
+            cs <- col_idx
+            if(is.null(rs)||is.null(cs)) stop("row and column indices must be specified")
+            num_modes <- tnsr@num_modes
+            if (length(rs) + length(cs) != num_modes) stop("incorrect number of indices")
+            if(any(rs<1) || any(rs>num_modes) || any(cs < 1) || any(cs>num_modes)) stop("illegal indices specified")
+            perm <- c(rs,cs)
+            if (any(sort(perm,decreasing=TRUE) != num_modes:1)) stop("missing and/or repeated indices")
+            modes <- tnsr@modes
+            mat <- tnsr@data
+            new_modes <- c(prod(modes[rs]),prod(modes[cs]))
+            #rearranges into a matrix
+            mat <- aperm(mat,perm)
+            dim(mat) <- new_modes
+            as.tensor(mat)
+          })
+
+#'@rdname k_unfold-methods
+#'@aliases k_unfold,Tensor-method
+setMethod("k_unfold", signature="Tensor",
+          definition=function(tnsr,m=NULL){
+            if(is.null(m)) stop("mode m must be specified")
+            num_modes <- tnsr@num_modes
+            rs <- m
+            cs <- (1:num_modes)[-m]
+            unfold(tnsr,row_idx=rs,col_idx=cs)
+          })
+
+
+#'@rdname matvec-methods
+#'@aliases matvec,Tensor-method matvec,Tensor-method
+setMethod('matvec',signature="Tensor",
+          definition=function(tnsr){
+            if(tnsr@num_modes!=3) stop("Matvec currently only implemented for 3d Tensors")
+            num_modes <- tnsr@num_modes
+            stopifnot(num_modes==3)
+            unfold(tnsr,row_idx=c(1,3),col_idx=2)
+          })
+
+#'@rdname rs_unfold-methods
+#'@aliases rs_unfold,Tensor-method
+setMethod("rs_unfold", signature="Tensor",
+          definition=function(tnsr,m=NULL){
+            if(is.null(m)) stop("mode m must be specified")
+            num_modes <- tnsr@num_modes
+            rs <- m
+            cs <- (1:num_modes)[-m]
+            unfold(tnsr,row_idx=rs,col_idx=cs)
+          })
+
+#'@rdname cs_unfold-methods
+#'@aliases cs_unfold,Tensor-method
+setMethod("cs_unfold", signature="Tensor",
+          definition=function(tnsr,m=NULL){
+            if(is.null(m)) stop("mode m must be specified")
+            num_modes <- tnsr@num_modes
+            rs <- (1:num_modes)[-m]
+            cs <- m
+            unfold(tnsr,row_idx=rs,col_idx=cs)
+          })
+options(warn=1)
+
+###Creation of Tensor from an array/matrix/vector
+
+#'Tensor Conversion
+#'
+#'Create a \code{\link{Tensor-class}} object from an \code{array}, \code{matrix}, or \code{vector}.
+#'@export
+#'@name as.tensor
+#'@rdname as.tensor
+#'@aliases as.tensor
+#'@param x an instance of \code{array}, \code{matrix}, or \code{vector}
+#'@param drop whether or not modes of 1 should be dropped
+#'@return a \code{\link{Tensor-class}} object
+#'@examples
+#'#From vector
+#'vec <- runif(100); vecT <- as.tensor(vec); vecT
+#'#From matrix
+#'mat <- matrix(runif(1000),nrow=100,ncol=10)
+#'matT <- as.tensor(mat); matT
+#'#From array
+#'indices <- c(10,20,30,40)
+#'arr <- array(runif(prod(indices)), dim = indices)
+#'arrT <- as.tensor(arr); arrT
+as.tensor <- function(x,drop=FALSE){
+  stopifnot(is.array(x)||is.vector(x))
+  if (is.vector(x)){
+    modes <- c(length(x))
+    num_modes <- 1L
+    new("Tensor", num_modes, modes, data = x)
+  }
+  else {
+    modes <- dim(x)
+    num_modes <- length(modes)
+    dim1s <- which(modes==1)
+    if (drop && (length(dim1s)>0)){
+      modes <- modes[-dim1s]
+      num_modes <- num_modes-length(dim1s)
+      new("Tensor",num_modes,modes,data=array(x,dim=modes))
+    }
+    else{
+      new("Tensor",num_modes,modes,data=x)
+    }
+  }
 }
 
-###Matrix Foldings
+#as.tensor <- function(x,drop=FALSE){
+#	stopifnot(is.array(x)||is.vector(x))
+#	if (is.vector(x)){
+#		modes <- c(length(x))
+#		num_modes <- 1L
+#	}else{
+#		modes <- dim(x)
+#		num_modes <- length(modes)
+#		dim1s <- which(modes==1)
+#		if(drop && (length(dim1s)>0)){
+#			modes <- modes[-dim1s]
+#			num_modes <- num_modes-length(dim1s)
+#		}
+#	}
+#new("Tensor",num_modes,modes,data=array(x,dim=modes))
+#}
 
-#'General Folding of Matrix
+
+#'Mode Permutation for Tensor
 #'
-#'General folding of a matrix into a Tensor. This is designed to be the inverse function to \code{\link{unfold-methods}}, with the same ordering of the indices. This amounts to following: if we were to unfold a Tensor using a set of \code{row_idx} and \code{col_idx}, then we can fold the resulting matrix back into the original Tensor using the same \code{row_idx} and \code{col_idx}.
+#'Overloads \code{aperm} for Tensor class for convenience.
+#'
+#'@docType methods
+#'@name tperm-methods
+#'@rdname tperm-methods
+#'@aliases tperm tperm-methods tperm,Tensor-method
+#'@details \code{tperm(tnsr,perm=NULL,...)}
 #'@export
-#'@details This function uses \code{aperm} as the primary workhorse.
-#'@name fold
-#'@rdname fold
-#'@aliases fold
-#'@param mat matrix to be folded into a Tensor
-#'@param row_idx the indices of the modes that are mapped onto the row space
-#'@param col_idx the indices of the modes that are mapped onto the column space
-#'@param modes the modes of the output Tensor
-#'@return Tensor object with modes given by \code{modes}
-#'@seealso \code{\link{unfold-methods}}, \code{\link{k_fold}}, \code{\link{unmatvec}}
+#'@param tnsr the Tensor instance
+#'@param perm the new permutation of the current modes
+#'@param ... additional parameters to be passed into \code{aperm}
+#'@examples
+#'tnsr <- rand_tensor(c(3,4,5))
+#'dim(tperm(tnsr,perm=c(2,1,3)))
+#'dim(tperm(tnsr,perm=c(1,3,2)))
+setGeneric(name="tperm",
+           def=function(tnsr,perm,...){standardGeneric("tperm")})
+
+#'@rdname tperm-methods
+#'@aliases tperm-methods tperm,Tensor-method
+setMethod("tperm",signature="Tensor",
+          definition=function(tnsr,...){
+            as.tensor(aperm(tnsr@data,...))
+          })
+
+
+#'Tensor Vec
+#'
+#'Turns the tensor into a single vector, following the convention that earlier indices vary slower than later indices.
+#'@docType methods
+#'@name vec-methods
+#'@details \code{vec(tnsr)}
+#'@export
+#'@rdname vec-methods
+#'@aliases vec vec,Tensor-method
 #'@references T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
+#'@param tnsr the Tensor instance
+#'@return vector with length \code{prod(x@@modes)}
 #'@examples
-#'tnsr <- new("Tensor",3L,c(3L,4L,5L),data=runif(60))
-#'matT3<-unfold(tnsr,row_idx=2,col_idx=c(3,1))
-#'identical(fold(matT3,row_idx=2,col_idx=c(3,1),modes=c(3,4,5)),tnsr)
-fold <- function(mat, row_idx = NULL, col_idx = NULL, modes=NULL){
-	#checks
-	rs <- row_idx
-	cs <- col_idx
-	if(is.null(rs)||is.null(cs)) stop("row space and col space indices must be specified")
-	if(is.null(modes)) stop("Tensor modes must be specified")
-	if(!is(mat,"Tensor")){
-		if(!is.matrix(mat))  stop("mat must be of class 'matrix'")
-		}else{
-			stopifnot(mat@num_modes==2)
-			mat <- mat@data
-			}
-	num_modes <- length(modes)
-	stopifnot(num_modes==length(rs)+length(cs))
-	mat_modes <- dim(mat)
-	if((mat_modes[1]!=prod(modes[rs])) || (mat_modes[2]!=prod(modes[cs]))) stop("matrix nrow/ncol does not match Tensor modes")
-	#rearranges into array
-	iperm <- match(1:num_modes,c(rs,cs))
-	as.tensor(aperm(array(mat,dim=c(modes[rs],modes[cs])),iperm))
-}
+#'tnsr <- rand_tensor(c(4,5,6,7))
+#'vec(tnsr)
+#'@rdname vec-methods
+#'@aliases vec,Tensor-method vec,Tensor-method
+setGeneric(name="vec",def=function(tnsr){standardGeneric("vec")})
 
-#'k-mode Folding of Matrix
-#'
-#'k-mode folding of a matrix into a Tensor. This is the inverse funtion to \code{k_unfold} in the m mode. In particular, \code{k_fold(k_unfold(tnsr, m),m,getModes(tnsr))} will result in the original Tensor.
-#'@export
-#'@details This is a wrapper function to \code{\link{fold}}.
-#'@name k_fold
-#'@rdname k_fold
-#'@aliases k_fold
-#'@param mat matrix to be folded into a Tensor
-#'@param m the index of the mode that is mapped onto the row indices
-#'@param modes the modes of the output Tensor
-#'@return Tensor object with modes given by \code{modes}
-#'@references T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
-#'@seealso \code{\link{k_unfold-methods}}, \code{\link{fold}}, \code{\link{unmatvec}}
-#'@examples
-#'tnsr <- new("Tensor",3L,c(3L,4L,5L),data=runif(60))
-#'matT2<-k_unfold(tnsr,m=2)
-#'identical(k_fold(matT2,m=2,modes=c(3,4,5)),tnsr)
-k_fold <- function(mat,m=NULL,modes=NULL){
-	if(is.null(m)) stop("mode m must be specified")
-	if(is.null(modes)) stop("Tensor modes must be specified")
-	num_modes <- length(modes)
-	rs <- m
-	cs <- (1:num_modes)[-m]
-	fold(mat,row_idx=rs,col_idx=cs,modes=modes)
-}
-
-#'Unmatvec Folding of Matrix
-#'
-#'The inverse operation to \code{\link{matvec-methods}}, turning a matrix into a Tensor. For a full account of matrix folding/unfolding operations, consult Kolda and Bader (2009).
-#'@export
-#'@name unmatvec
-#'@rdname unmatvec
-#'@aliases unmatvec
-#'@param mat matrix to be folded into a Tensor
-#'@param modes the modes of the output Tensor
-#'@return Tensor object with modes given by \code{modes}
-#'@references T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
-#'@seealso \code{\link{matvec-methods}}, \code{\link{fold}}, \code{\link{k_fold}}
-#'@examples
-#'tnsr <- new("Tensor",3L,c(3L,4L,5L),data=runif(60))
-#'matT1<-matvec(tnsr)
-#'identical(unmatvec(matT1,modes=c(3,4,5)),tnsr)
-unmatvec <- function(mat,modes=NULL){
-	if(is.null(modes)) stop("Tensor modes must be specified")
-	num_modes <- length(modes)
-	cs <- 2
-	rs <- (1:num_modes)[-2]
-	fold(mat,row_idx=rs,col_idx=cs,modes=modes)
-}
-
-#'Row Space Folding of Matrix
-#'
-#'DEPRECATED. Please see \code{\link{k_fold}}.
-#'@export
-#'@param mat matrix to be folded
-#'@param m the mode corresponding to rs_unfold
-#'@param modes the original modes of the tensor
-#'@name rs_fold
-#'@rdname rs_fold
-#'@aliases rs_fold
-rs_fold <- function(mat,m=NULL,modes=NULL){
-	if(is.null(m)) stop("mode m must be specified")
-	if(is.null(modes)) stop("Tensor modes must be specified")
-	num_modes <- length(modes)
-	rs <- m
-	cs <- (1:num_modes)[-m]
-	fold(mat,row_idx=rs,col_idx=cs,modes=modes)
-}
+#'@rdname vec-methods
+#'@aliases vec,Tensor-method vec,Tensor-method
+setMethod("vec",signature="Tensor",
+          definition=function(tnsr){
+            as.vector(tnsr@data)
+          })
 
 
-#'Column Space Folding of Matrix
-#'
-#'DEPRECATED. Please see \code{\link{unmatvec}}
-#'@export
-#'@param mat matrix to be folded
-#'@param m the mode corresponding to cs_unfold
-#'@param modes the original modes of the tensor
-#'@name cs_fold
-#'@rdname cs_fold
-#'@aliases cs_fold
-cs_fold <- function(mat,m=NULL,modes=NULL){
-	if(is.null(m)) stop("mode m must be specified")
-	if(is.null(modes)) stop("Tensor modes must be specified")
-	num_modes <- length(modes)
-	cs <- m
-	rs <- (1:num_modes)[-m]
-	fold(mat,row_idx=rs,col_idx=cs,modes=modes)
-}
-
-#'ORL Database of Faces
-#'
-#'A dataset containing pictures of 40 individuals under 10 different lightings. Each image has 92 x 112 pixels. Structured as a 4-tensor with modes 92 x 112 x 40 x 10.
-#'@format A Tensor object with modes 92 x 112 x 40 x 10. The first two modes correspond to the image pixels, the third mode corresponds to the individual, and the last mode correpsonds to the lighting.
-#'@source \url{http://www.cl.cam.ac.uk/research/dtg/attarchive/facedatabase.html}
-#'@seealso \code{\link{plot_orl}}
-"faces_tnsr"
-
-#'Function to plot the ORL Database of Faces
-#'
-#'A wrapper function to image() to allow easy visualization of faces_tnsr, the ORL Face Dataset.
-#'@export
-#'@name plot_orl
-#'@rdname plot_orl
-#'@aliases plot_orl
-#'@param subject which subject to plot (1-40)
-#'@param condition which lighting condition (1-10)
-#'@references AT&T Laboratories Cambridge. \url{http://www.cl.cam.ac.uk/research/dtg/attarchive/facedatabase.html}
-#'@references F. Samaria, A. Harter, "Parameterisation of a Stochastic Model for Human Face Identification". IEEE Workshop on Applications of Computer Vision 1994.
-#'@seealso \code{\link{faces_tnsr}}
-#'@examples
-#'plot_orl(subject=5,condition=4)
-#'plot_orl(subject=2,condition=7)
-plot_orl <- function(subject=1, condition=1){
-	if (subject%in%seq(1,40)==FALSE) stop("subject must be between 1 and 40")
-	if (condition%in%seq(1,10)==FALSE) stop("condition must be between 1 and 10")
-	greyscale = grey(seq(0,1,length=256))
-	faces_tnsr <- load_orl()
-	image(faces_tnsr[,,subject,condition]@data,col=greyscale)
-}
-
-
-###Invisible Functions (undocumented)
-#Wrapper to Inverse FFT
-.ifft <- function(x){suppressWarnings(as.numeric(fft(x,inverse=TRUE))/length(x))}
-#Creates a superdiagonal tensor
-.superdiagonal_tensor <- function(num_modes,len,elements=1L){
-	modes <- rep(len,num_modes)
-	arr <- array(0, dim = modes)
-	if(length(elements)==1) elements <- rep(elements,len)
-	for (i in 1:len){
-		txt <- paste("arr[",paste(rep("i", num_modes),collapse=","),"] <- ", elements[i],sep="")
-		eval(parse(text=txt))
-	}
-	as.tensor(arr)
-}
-#3-Tensor Kilmer et. al (2013) identity
-.identity_tensor3d <- function(modes){
-	if(length(modes)!=3L) stop("identity tensor only implemented for 3d so far")
-	n <- modes[1]
-	stopifnot(n==modes[2])
-	arr <- array(0,dim=modes)
-	arr[,,1] <- diag(1,n,n)
-	as.tensor(arr)
-}
-#Simple timing functions
-.tic <- function (gcFirst = TRUE,overwrite=TRUE) {
-   if(gcFirst) gc(FALSE)
-   tic <- proc.time()
-   ticExists <- ".tic"%in%ls(all.names=TRUE,envir=baseenv())
-   if(overwrite||!ticExists){
-   	assign(".tic", tic, envir=baseenv())
-   	}
-   	else{
-   		stop("Another timing function running")
-   		}
-   invisible(tic)
-}
-.toc <- function (pr=FALSE) {
-   toc <- proc.time()
-   tic <- get(".tic", envir=baseenv())
-   if(pr) print(toc - tic)
-   invisible(toc - tic)
-}
-# #'MNIST Handwritten Digits Dataset in Tensor Format
-# #'
-# #'A dataset containing the MNIST training set, which contains 60,000 images (28 x 28 pixels) of handwritten digits (0-9).
-# #'@format Organized into a List, with each element of the list being a 3-Tensor corresponding to a single digit. Each 3-Tensor is (N x 28 x 28), where N is the number of samples that correspond to this digit in the original training dataset.
-# #'@source \url{http://yann.lecun.com/exdb/mnist/}
-# #'@seealso \code{\link{MNIST_test}}, \code{\link{plot_MNIST}}
-# "MNIST_train"
-
-# #'MNIST Handwritten Digits Databse in Tensor Format
-# #'
-# #'A dataset containing the MNIST test set, which contains 10,000 images (28 x 28 pixels) of handwritten digits (0-9).
-# #'@format Organized into a List, with each element of the list being a 3-Tensor corresponding to a single digit. Each 3-Tensor is (N x 28 x 28), where N is the number of samples that correspond to this digit in the original test dataset.
-# #'@source \url{http://yann.lecun.com/exdb/mnist/}
-# #'@seealso \code{\link{MNIST_train}}, \code{\link{plot_MNIST}}
-# "MNIST_test"
-
-# #'Function to plot the MNIST Dataset
-# #'
-# #'A wrapper function to image() to allow easy visualization of MNIST_train and MNIST_test, the training and testing datasets from MNIST.
-# #'@export
-# #'@name plot_MNIST
-# #'@rdname plot_MNIST
-# #'@aliases plot_MNIST
-# #'@param train_or_test 'train' or 'test' dataset
-# #'@param digit which digit (0-9)
-# #'@param index which index for this digit (if NULL then a random index will be chosen)
-# #'@references \url{http://yann.lecun.com/exdb/mnist/}
-# #'@references Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, "Gradient-based Learning Applied to Document Recognition". Proceedings of the IEEE, 86, 2278-2324.
-# #'@seealso \code{\link{MNIST_train}}, \code{\link{MNIST_test}}
-# #'@examples
-# #'plot_MNIST('train',digit=5,index=14)
-# #'plot_MNIST('train',digit=9,index=14)
-# #'plot_MNIST('test',digit=3)
-# plot_MNIST <- function(train_or_test='train',digit=9,index=NULL){
-	# if ((digit%in%seq(0,9))==FALSE) stop("digit must be an integer between 0 and 9")
-	# greyscale = grey(seq(0,1,length=256))
-	# MNIST_train <- NULL; MNIST_test <- NULL
-	# rm(MNIST_train); rm(MNIST_test)
-	# if (train_or_test=='train'){
-		# data(MNIST_train, package='rTensor', envir=environment())
-		# tmp_tnsr <- MNIST_train[[digit+1]]
-		# num_length <- tmp_tnsr@modes[1]
-		# if (is.null(index)) index <- sample(seq(1,num_length),1)
-		# if ((index%in%seq(1,num_length))==FALSE) stop(paste("index must not exceed ",num_length," for this digit",sep=""))
-		# image(tmp_tnsr[index,,]@data, col=greyscale)
-	# }else if(train_or_test=='test'){
-		# data(MNIST_test, package='rTensor', envir=environment())
-		# tmp_tnsr <- MNIST_test[[digit+1]]
-		# num_length <- tmp_tnsr@modes[1]
-		# if (is.null(index)) index <- sample(seq(1,num_length),1)
-		# if ((index%in%seq(1,num_length))==FALSE) stop(paste("index must not exceed ",num_length," for this digit",sep=""))
-		# image(tmp_tnsr[index,,]@data, col=greyscale)
-	# }else{
-		# stop("train_or_test must be 'train' or 'test'")
-	# }
-# }
