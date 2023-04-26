@@ -90,25 +90,39 @@ tensor_inverse <- function(A) {
 #' @importFrom stats %*%
 #' @export
 
+matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
+  mat_parameters <- aperm(array(parameter_matrix, dim = c(num_rows,num_cols,num_rows,num_cols)), c(1,3,2,4))
+  row_col_prod <- num_rows*num_cols
+  
+  # Generate random normal variables for the initial values
+  init_vals <- matrix(rnorm(row_col_prod), nrow = 1)
+  
+  # Simulate the VAR process
+  sim_data <- matrix(0, nrow = obs, ncol = row_col_prod)
+  for (i in 2:obs) {
+    sim_data[i,] <- parameter_matrix %*% sim_data[i-1,] + rnorm(6)
+  }
+  sim_data[1, ] <- init_vals
+  sim_mat <- array(sim_data, dim = c(obs,3,2))
+  return(list(matrix_data = sim_mat, vector_data = sim_data))
+}
+
 HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) {
+  stopifnot(is(Y, "Tensor"))
+  stopifnot(is(X, "Tensor"))
   
   # Compute numerator and denominator tensors
-  numerator <- tensor(Y, X, obs_dim_Y, obs_dim_X)
-  denominator <- tensor(X, X, obs_dim_X, obs_dim_X)
+  numerator <- ttt(X, Y, obs_dim_Y, obs_dim_X)
+  denominator <- ttt(X, X, obs_dim_X, obs_dim_X)
   
   # Invert the denominator tensor
   inverted_den <- tensor_inverse(denominator)
   
   # Compute HOOLS estimator
   number_dims <- length(dim(numerator))
-  if (number_dims == 2) {
-    # Case when numerator is a matrix
-    return(numerator %*% inverted_den)
-  } else {
-    # Case when numerator is a tensor of higher order
-    ols_hat <- tensor(inverted_den, numerator, (number_dims/2 + 1):number_dims,
+  
+  ols_hat <- ttt(inverted_den, numerator, (number_dims/2 + 1):number_dims,
                       1:(number_dims/2))
-    return(ols_hat)
-  }
+  return(ols_hat)
 }
 

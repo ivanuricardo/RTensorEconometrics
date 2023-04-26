@@ -2,13 +2,7 @@ library(tensor)
 library(vars)
 library(tsDyn)
 library(forecast)
-var_ols <- function(A){
-  dimensions_A <- dim(A)
-  original_A <- A[-1,]
-  lagged_A <- A[1:(dimensions_A[1]-1),]
-  ols_hat <- solve(t(lagged_A)%*%lagged_A) %*% (t(lagged_A)%*%original_A)
-  return(t(ols_hat))
-}
+
 # Observations are listed last
 HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) {
   
