@@ -1,3 +1,43 @@
+#' Compute the tensor product of two tensors along specified modes.
+#'
+#' @param A First input tensor.
+#' @param B Second input tensor.
+#' @param alongA An integer indicating the mode of A along which to perform
+#'   the tensor product. Default is NA.
+#' @param alongB An integer indicating the mode of B along which to perform
+#'   the tensor product. If NA, set to alongA. Default is NA.
+#' 
+#' @return A new tensor resulting from the tensor product of A and B along the
+#'   specified modes.
+#'
+#' @examples
+#' A <- array(1:24, dim = c(3, 4, 2))
+#' B <- array(1:24, dim = c(2, 3, 4))
+#' ttt(A, B, alongA = 3, alongB = 1)
+#' 
+#' @export
+ttt <- function(A, B, alongA = NA, alongB = NA) {
+  stopifnot(is(A, "Tensor"))
+  stopifnot(is(B, "Tensor"))
+  
+  # Set alongB to alongA if alongB is NA
+  alongB <- ifelse(is.na(alongB), alongA, alongB)
+  
+  # Get dimensions of resulting tensor
+  first_dims <- A@modes[-match(A@modes[alongA], A@modes)]
+  last_dims <- B@modes[-match(B@modes[alongB], B@modes)]
+  full_dims <- c(first_dims, last_dims)
+  
+  # Compute the tensor product
+  amatrix <- unfold(A, setdiff(1:A@num_modes, alongA), alongA)
+  bmatrix <- unfold(B, alongB, setdiff(1:B@num_modes, alongB))
+  cmatrix <- amatrix@data %*% bmatrix@data
+  
+  # Return the result as a tensor
+  as.tensor(array(cmatrix, dim = full_dims))
+}
+
+
 
 #' Invert a tensor
 #'
@@ -11,20 +51,19 @@
 #' A <- array(1:8, dim = c(2, 2, 2))
 #' tensor_inverse(A) # returns the inverse of A
 tensor_inverse <- function(A) {
-  dims <- dim(A)  # get the dimensions of A
-  num_dims <- length(dims)  # get the number of dimensions in A
-  if (num_dims %% 2 == 1) {  # check if num_dims is odd
+  if (is.array(A) || is.vector(A)) A <- as.tensor(A)
+  if (A@num_modes %% 2 == 1) {
     stop("Dimensions must be of even length")
   }
-  if (num_dims == 2) {  # check if A is a matrix
-    return(solve(A))
+  if(A@num_modes == 2) {
+    return(solve(A@data))
   }
-  n <- num_dims %/% 2  # integer division to get half the length of dims
-  nrows <- prod(dims[1:n])  # calculate number of rows in the resulting mat_A
-  matricized_A <- matrix(A, nrow = nrows, byrow = FALSE)  # matricize A
-  inverted_A <- solve(matricized_A)  # find inverse of matricized_A
-  reshaped_A <- array(inverted_A, dim = dims)  # reshape inverted_A into a tensor
-  return(reshaped_A)  # return the inverse of A
+  fin_nrows <- prod(A@modes[1:(length(A@modes)/2)])
+  matricized_A <- unfold(A, row_idx = 1:(A@num_modes/2),
+                         col_idx = (A@num_modes/2 + 1):A@num_modes)
+  inverse_A <- solve(matricized_A@data)
+  reshaped_A <- array(inverse_A, dim = A@modes)
+  return(as.tensor(reshaped_A))
 }
 
 

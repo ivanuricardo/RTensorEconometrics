@@ -1,6 +1,7 @@
 
 # Test output is identity
 test_that("product_is_identity", {
+  library(rTensor)
   set.seed(111111)
   # Two tensor with correct dimensions, one without
   tensor1 <- array(rnorm(36), dim = c(3,2,3,2))
@@ -21,11 +22,13 @@ test_that("product_is_identity", {
   identity2 <- diag(dim_id2)
   
   # Tensor Product between tensor and inverse
-  result1 <- tensor(tensor1, inverted1, alongA = 3:4, alongB = 1:2)
-  result2 <- tensor(tensor2, inverted2, alongA = 4:6, alongB = 1:3)
+  result1 <- ttt(as.tensor(tensor1), inverted1, alongA = 3:4,
+                 alongB = 1:2)
+  result2 <- ttt(as.tensor(tensor2), inverted2, alongA = 4:6,
+                 alongB = 1:3)
   
   # Test inverse product
-  expect_equal(identity1, matrix(result1, nrow = 6))
-  expect_equal(identity2, matrix(result2, nrow = 24))
+  expect_equal(identity1, unfold(result1, c(1,2), c(3,4))@data)
+  expect_equal(identity2, unfold(result2, c(1,2,3), c(4,5,6))@data)
   expect_error(tensor_inverse(tensor3))
 })
