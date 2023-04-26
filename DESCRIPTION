@@ -1,7 +1,7 @@
 Package: TensorEconometrics
 Type: Package
 Title: Tensor Methods for Econometrics
-Version: 1.0
+Version: 1.0.1
 Date: 2023-04-18
 Author: Ivan Ricardo
 Maintainer: Who to complain to <yourfault@somewhere.net>
