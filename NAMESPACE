@@ -1,2 +1,2 @@
-export("cp_als", "reconstruct_cp",
-       "tensor_ip", "tucker_hosvd")
+export("cp_als", "reconstruct_cp", "tensor_ip", "tucker_hosvd", "matrix_ols_sim", "tensor_inverse", "ttt", 
+       "HOOLS")
