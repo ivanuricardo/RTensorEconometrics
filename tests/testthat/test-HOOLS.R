@@ -1,5 +1,3 @@
-
-
 test_that("OLS_match", {
   set.seed(111111) # for reproducibility
   var_ols <- function(A){
@@ -28,4 +26,11 @@ test_that("OLS_match", {
   expected <- var_ols(sim_mat$vector_data)
   
   expect_equal(t(matrix(result@data, nrow = 6)), expected)
+  
+  # Now check whether alternate obs orderings also work
+  alt_Y <- aperm(sim_mat$matrix_data[2:100,,], c(2,3,1))
+  alt_X <- aperm(sim_mat$matrix_data[1:99,,], c(2,3,1))
+  
+  result2 <- HOOLS(as.tensor(alt_Y), as.tensor(alt_X), obs_dim_Y = 3, obs_dim_X = 3)
+  expect_equal(t(matrix(result2@data, nrow = 6)), expected)
 })
