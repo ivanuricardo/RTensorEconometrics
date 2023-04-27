@@ -107,9 +107,39 @@ matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
   return(list(matrix_data = sim_mat, vector_data = sim_data))
 }
 
+#' Compute the Higher-Order Ordinary Least Squares (HOOLS) estimator
+#'
+#' The HOOLS estimator is a generalization of the ordinary least squares (OLS) estimator to higher-order tensors.
+#' 
+#' @param Y A tensor of response variables.
+#' @param X A tensor of predictor variables.
+#' @param obs_dim_Y An integer indicating the dimension of \code{Y} along which observations are stacked.
+#' @param obs_dim_X An integer indicating the dimension of \code{X} along which observations are stacked.
+#'
+#' @return A tensor of HOOLS estimators.
+#' 
+#' @details This function computes the HOOLS estimator for a tensor regression model. The HOOLS estimator is defined
+#' as the solution to the equation X = X_1 B_1 + X_2 B_2 + ... + X_r B_r, where X is a tensor of predictor variables,
+#' X_1, X_2, ..., X_r are subtensors of X obtained by fixing the values of certain indices, and B_1, B_2, ..., B_r
+#' are tensors of HOOLS estimators.
+#' 
+#' @examples
+#' # Generate random tensor data
+#' library(rTensor)
+#' Y <- rand_tensor(c(100, 3,4))
+#' X <- rand_tensor(c(100, 3,2))
+#' 
+#' # Compute HOOLS estimator with observations along the first dimension
+#' HOOLS(Y, X, obs_dim_Y = 1, obs_dim_X = 1)
+#'
+#' @importFrom ttt tensor_inverse
+#' @export
+#' @rdname HOOLS
 HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) {
-  stopifnot(is(Y, "Tensor"))
-  stopifnot(is(X, "Tensor"))
+  # Check input types
+  if (!inherits(Y, "Tensor") || !inherits(X, "Tensor")) {
+    stop("Y and X must be tensors")
+  }
   
   # Compute numerator and denominator tensors
   numerator <- ttt(X, Y, obs_dim_Y, obs_dim_X)
@@ -120,9 +150,10 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
   
   # Compute HOOLS estimator
   number_dims <- length(dim(numerator))
+  ols_hat <- ttt(inverted_den, numerator, (number_dims/2 + 1):number_dims, 1:(number_dims/2))
   
-  ols_hat <- ttt(inverted_den, numerator, (number_dims/2 + 1):number_dims,
-                      1:(number_dims/2))
   return(ols_hat)
 }
+
+
 
