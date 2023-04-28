@@ -7,6 +7,11 @@ Note, this package is meant for use in addition to the rTensor package, and thus
 admits the S4 "tensor" class. Note that rTensor has their own implementation of 
 CP and Tucker decompositions. 
 
+## Additional Tensor Algebra
+
+- [x] Tensor times Tensor
+- [x] Tensor Inverse
+
 ## Canonical Polyadic/PARAFAC decomposition
 
 - [x] Decomposition algorithm
