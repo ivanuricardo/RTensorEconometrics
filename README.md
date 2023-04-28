@@ -7,6 +7,10 @@ Note, this package is meant for use in addition to the rTensor package, and thus
 admits the S4 "tensor" class. rTensor has their own implementation of 
 CP and Tucker decompositions. 
 
+## Data
+
+- [ ] Preprocessed GVAR data
+
 ## Additional Tensor Algebra
 
 - [x] Tensor times Tensor
