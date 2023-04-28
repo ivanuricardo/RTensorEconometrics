@@ -4,7 +4,7 @@ Tensor Methods for Econometrics
 This repo can be installed using devtools::install_github("https://github.com/ivanuricardo/TensorEconometrics"). 
 
 Note, this package is meant for use in addition to the rTensor package, and thus
-admits the S4 "tensor" class. Note that rTensor has their own implementation of 
+admits the S4 "tensor" class. rTensor has their own implementation of 
 CP and Tucker decompositions. 
 
 ## Additional Tensor Algebra
