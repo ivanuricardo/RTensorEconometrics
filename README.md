@@ -1,7 +1,11 @@
 # TensorEconometrics
 Tensor Methods for Econometrics
 
-This repo is designed to include tensor methods for econometric research. A list of methods are provided as follows:
+This repo can be installed using devtools::install_github("https://github.com/ivanuricardo/TensorEconometrics"). 
+
+Note, this package is meant for use in addition to the rTensor package, and thus
+admits the S4 "tensor" class. Note that rTensor has their own implementation of 
+CP and Tucker decompositions. 
 
 ## Canonical Polyadic/PARAFAC decomposition
 
@@ -15,8 +19,9 @@ This repo is designed to include tensor methods for econometric research. A list
 - [ ] Higher Order Orthogonal Iteration
 - [ ] Reconstruction algorithm
 
-## Time Series Regressions
+## Regressions
 
+- [x] Higher Order OLS
 - [ ] Matrix Autoregression
 - [ ] Tensor Autoregression
 - [ ] Tensor-on-Tensor Regression

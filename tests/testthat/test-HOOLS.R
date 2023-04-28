@@ -35,7 +35,7 @@ test_that("OLS_match", {
   expect_equal(t(matrix(result2@data, nrow = 6)), expected)
 })
 
-test_that("Higher_Order_tensors", {
+test_that("Higher_Order_Tensors", {
   set.seed(12345678) # for reproducibility
   library(bigtime)
   library(rTensor)
