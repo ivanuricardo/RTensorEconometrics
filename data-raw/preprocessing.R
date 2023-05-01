@@ -37,9 +37,10 @@ usethis::use_data(traditional_data, overwrite = TRUE)
 
 # create 3-dimensional tensor of ROW
 # Perhaps
-tensor_data <- stat_traditional %>% 
+tensor_data <- traditional_data %>% 
   as.matrix(byrow = TRUE) %>% 
   array(dim = c(161, 5, 32)) %>% 
   aperm(c(1, 3, 2))
 
 usethis::use_data(tensor_data, overwrite = TRUE)
+saveRDS(tensor_data, "tensor_data.rds")
