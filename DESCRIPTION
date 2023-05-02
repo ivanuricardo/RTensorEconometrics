@@ -14,7 +14,7 @@ Suggests:
 Config/testthat/edition: 3
 RoxygenNote: 7.2.3
 Depends: 
-    R (>= 2.10)
+    R (>= 2.10),
     rTensor(>=1.0.0)
 LazyData: true
 Imports: rTensor
