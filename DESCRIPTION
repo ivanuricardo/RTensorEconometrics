@@ -16,3 +16,4 @@ RoxygenNote: 7.2.3
 Depends: 
     R (>= 2.10)
 LazyData: true
+Imports: rTensor(>=1.0.0)
