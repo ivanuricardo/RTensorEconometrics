@@ -54,3 +54,34 @@ cp_rank_selection <- function(tnsr, max_rank) {
   return(list(selected_rank = which.min(vec_rank_ratio), rank_vec = vec_rank_ratio))
 }
 
+#' Select the rank of each mode of a tensor using Tucker approximation
+#'
+#' Given a tensor, this function computes the optimal rank for each mode using
+#' the SVD of the flattened tensor. WARNING: Can be slow for large tensors.
+#' Additionally, for determination of c, see Xia, Xu, and Zhu 2015, Wang et. al 2022.
+#'
+#' @param tnsr A tensor object
+#' @param c Regularization parameter to avoid division by zero
+#' @return A vector with the estimated rank for each mode
+#' @export
+tucker_rank_selection <- function(tnsr, c) {
+  est_ranks <- NULL
+  for (mode in 1:tnsr@num_modes) {
+    # Unfold tensor along the current mode
+    flattened_tnsr <- unfold(tnsr, mode, setdiff((1:tnsr@num_modes), mode))@data
+    
+    # Compute the singular values of the flattened tensor
+    svd_mode <- svd(flattened_tnsr)$d
+    
+    # Compute the optimal rank for the current mode
+    r_mode <- which.max((svd_mode[1:(tnsr@modes[mode] - 1)] + c) /
+                          (svd_mode[2:(tnsr@modes[mode])] + c))
+    
+    # Store the estimated rank for the current mode
+    est_ranks[mode] <- r_mode
+  }
+  
+  # Return the estimated ranks for each mode
+  return(est_ranks = est_ranks)
+}
+
