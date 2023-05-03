@@ -4,12 +4,13 @@
 \alias{tucker_rank_selection}
 \title{Select the rank of each mode of a tensor using Tucker approximation}
 \usage{
-tucker_rank_selection(tnsr, c)
+tucker_rank_selection(tnsr, c = log(tnsr@modes[1])/(10 * tnsr@modes[1]))
 }
 \arguments{
 \item{tnsr}{A tensor object}
 
-\item{c}{Regularization parameter to avoid division by zero}
+\item{c}{Regularization parameter to avoid division by zero. Default is given in 
+Xia, Xu, and Zhu 2015}
 }
 \value{
 A vector with the estimated rank for each mode

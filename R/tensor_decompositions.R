@@ -61,10 +61,11 @@ cp_rank_selection <- function(tnsr, max_rank) {
 #' Additionally, for determination of c, see Xia, Xu, and Zhu 2015, Wang et. al 2022.
 #'
 #' @param tnsr A tensor object
-#' @param c Regularization parameter to avoid division by zero
+#' @param c Regularization parameter to avoid division by zero. Default is given in 
+#' Xia, Xu, and Zhu 2015
 #' @return A vector with the estimated rank for each mode
 #' @export
-tucker_rank_selection <- function(tnsr, c) {
+tucker_rank_selection <- function(tnsr, c = log(tnsr@modes[1])/(10*tnsr@modes[1])) {
   est_ranks <- NULL
   for (mode in 1:tnsr@num_modes) {
     # Unfold tensor along the current mode
