@@ -2,31 +2,38 @@
 % Please edit documentation in R/tensor_regressions.R
 \name{matrix_ols_sim}
 \alias{matrix_ols_sim}
-\title{Higher Order Ordinary Least Squares (HOOLS) Estimator}
+\title{Simulate data from a VAR process and estimate the OLS coefficients}
 \usage{
 matrix_ols_sim(obs, parameter_matrix, num_rows, num_cols)
 }
 \arguments{
-\item{Y}{A higher order array with dimensions `d1 x d2 x ... x dn`.}
+\item{obs}{An integer specifying the number of observations to simulate.}
 
-\item{X}{A higher order array with dimensions `d1 x d2 x ... x dn`.}
+\item{parameter_matrix}{A num_rows * num_cols by num_rows * num_cols parameter matrix for the VAR process.}
 
-\item{obs_dim_Y}{An integer indicating the dimension containing the
-observations in `Y` (default is `n`).}
+\item{num_rows}{An integer specifying the number of rows in the parameter matrix.}
 
-\item{obs_dim_X}{An integer indicating the dimension containing the
-observations in `X` (default is `n`).}
+\item{num_cols}{An integer specifying the number of columns in the parameter matrix.}
 }
 \value{
-Returns the OLS estimator.
+A list containing the simulated data as a 3-mode tensor with dimensions obs x num_rows x num_cols and
+as a matrix with dimensions obs x (num_rows * num_cols).
 }
 \description{
-Calculates the Ordinary Least Squares (OLS) Estimator for a
-higher order array. The last dimension of `Y` and `X` is assumed to contain
-the observations by default. IMPORTANT: Assumes that both response and 
-predictor tensors are of the same dimensions.
+This function simulates data from a VAR process with coefficients given by a parameter matrix and then
+estimates the OLS coefficients using matrix algebra.
+}
+\details{
+This function simulates data from a VAR process of the form X_t = A_1 X_{t-1} + ... + A_p X_{t-p} + u_t,
+where X_t is a num_rows x num_cols matrix of observed variables, A_1, ..., A_p are num_rows x num_cols parameter
+matrices, p is the order of the VAR process, and u_t is a num_rows x num_cols matrix of errors with independent,
+identically distributed normal entries. The parameter matrix is given by vec(A_1), vec(A_2), ..., vec(A_p),
+where vec(A_i) denotes the vectorization of the matrix A_i. The OLS coefficients for the VAR process are then
+estimated using matrix algebra.
 }
 \examples{
-HOOLS(Y, X)
+# Simulate data from a VAR process with 2 variables and order 1
+parameter_matrix <- matrix(c(0.5, 0.3, 0.2, 0.4), nrow = 2)
+matrix_ols_sim(obs = 100, parameter_matrix = parameter_matrix, num_rows = 2, num_cols = 1)
 
 }
