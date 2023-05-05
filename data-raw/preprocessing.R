@@ -28,6 +28,9 @@ updated_gvar <- sa_gvar[ , colSums(is.na(sa_gvar))==0]
 traditional_gvar <- reshape(updated_gvar, idvar = "date", timevar = "country",
                             direction = "wide")
 traditional_gvar[,"date"] <- list(NULL)
+traditional_data_levels <- traditional_gvar
+
+usethis::use_data(traditional_data_levels, overwrite = TRUE)
 
 # Convert to stationarity and remove first two observations
 stat_traditional <- order_integration(traditional_gvar)
@@ -36,7 +39,6 @@ traditional_data <- stat_traditional$diff_data[3:nrow(stat_traditional$diff_data
 usethis::use_data(traditional_data, overwrite = TRUE)
 
 # create 3-dimensional tensor of ROW
-# Perhaps
 tensor_data <- traditional_data %>% 
   as.matrix(byrow = TRUE) %>% 
   array(dim = c(161, 5, 32)) %>% 
@@ -44,3 +46,10 @@ tensor_data <- traditional_data %>%
 
 usethis::use_data(tensor_data, overwrite = TRUE)
 saveRDS(tensor_data, "tensor_data.rds")
+
+tensor_data_levels <- traditional_data_levels %>%
+  as.matrix(byrow = TRUE) %>% 
+  array(dim = c(163, 5, 32)) %>% 
+  aperm(c(1, 3, 2))
+
+usethis::use_data(tensor_data_levels, overwrite = TRUE)

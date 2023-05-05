@@ -3,15 +3,22 @@
 \docType{data}
 \name{tensor_data}
 \alias{tensor_data}
+\alias{tensor_data_levels}
 \title{Global Vector Autoregression Data Set (Array Format)}
 \format{
+An array with dimensions 161 x 32 x 5.
+
 An array with dimensions 161 x 32 x 5.
 }
 \source{
 This data set is simulated for demonstration purposes.
+
+This data set is simulated for demonstration purposes.
 }
 \usage{
 tensor_data
+
+tensor_data_levels
 }
 \description{
 This data set contains a global vector autoregression (VAR) model with 5
@@ -19,8 +26,18 @@ countries and 3 economic variables. The data is rearranged into an array
 with dimensions 161 x 32 x 5, where the first dimension represents the time
 index, the second dimension represents the country index, and the third
 dimension represents the economic variable index.
+
+This data set contains a global vector autoregression (VAR) model with 5
+countries and 3 economic variables. The data is rearranged into an array
+with dimensions 161 x 32 x 5, where the first dimension represents the time
+index, the second dimension represents the country index, and the third
+dimension represents the economic variable index.
 }
 \examples{
+data(global_var_array)
+dim(global_var_array)
+dimnames(global_var_array)
+
 data(global_var_array)
 dim(global_var_array)
 dimnames(global_var_array)
