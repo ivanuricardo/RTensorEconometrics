@@ -26,8 +26,8 @@ ttt <- function(A, B, alongA = NA, alongB = NA) {
   alongB <- ifelse(is.na(alongB), alongA, alongB)
   
   # Get dimensions of resulting tensor
-  first_dims <- A@modes[-match(A@modes[alongA], A@modes)]
-  last_dims <- B@modes[-match(B@modes[alongB], B@modes)]
+  first_dims <- A@modes[-alongA]
+  last_dims <- B@modes[-alongB]
   full_dims <- c(first_dims, last_dims)
   
   # Compute the tensor product

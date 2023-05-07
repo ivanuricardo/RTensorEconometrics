@@ -72,3 +72,13 @@ test_that("rearranged_product", {
   expect_equal(result@data, expected@data)
   expect_equal(result@modes, expected@modes)
 })
+
+test_that("equal_dimensions", {
+  library(rTensor)
+  x <- rand_tensor(modes = c(3, 3, 3, 3))
+  y <- rand_tensor(modes = c(3, 3, 3, 3))
+  
+  result <- ttt(x, y, alongA = c(3:4), alongB = c(1:2))
+  
+  expect_equal(result@modes, x@modes)
+})
