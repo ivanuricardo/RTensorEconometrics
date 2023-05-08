@@ -28,11 +28,22 @@ reconstruct_cp <- function(A, B, C, r, lambda = rep(1, r)) {
 #'
 #' This function selects the rank of a tensor based on the ratio of the
 #' approximation error between different rank values obtained by CP decomposition.
-#' 
+#' Additionally, it gives a plot for visual inspection of the fit
+#'
 #' @param tnsr The input tensor.
 #' @param max_rank The maximum rank to consider.
-#' @return The selected rank.
+#' @return A list with the selected rank and a vector of the approximation error
+#' for each rank.
 #' @export
+#' @examples
+#' # Load data
+#' data(traditional_data)
+#'
+#' # Convert data to tensor
+#' traditional_tensor <- as.tensor(traditional_data)
+#'
+#' # Select the rank of the tensor using CP decomposition
+#' cp_rank_selection(traditional_tensor, 20)
 cp_rank_selection <- function(tnsr, max_rank) {
   # Check input types
   if (!inherits(tnsr, "Tensor")) {
@@ -47,12 +58,18 @@ cp_rank_selection <- function(tnsr, max_rank) {
     fnorm_fit[i] <- sim_cp$fnorm_resid
   }
   
-  # Compute the ratio of approximation errors
-  vec_rank_ratio <- fnorm_fit[-max_rank] / fnorm_fit[-1]
+  # Calculate the first and second derivatives of fnorm_fit
+  first_deriv <- diff(fnorm_fit)
+  second_deriv <- diff(first_deriv)
   
-  # Return the index of the minimum ratio
-  return(list(selected_rank = which.min(vec_rank_ratio), rank_vec = vec_rank_ratio))
+  # Find the index of the maximum value of the second derivative
+  kink_index <- which.max(second_deriv)
+  
+  # Return the rank at the kink
+  plot(fnorm_fit)
+  return(list(fnorm_fit = fnorm_fit, kink_rank = kink_index + 1))
 }
+
 
 #' Select the rank of each mode of a tensor using Tucker approximation
 #'
