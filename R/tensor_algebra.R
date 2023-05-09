@@ -65,3 +65,70 @@ tensor_inverse <- function(A) {
   reshaped_A <- array(inverse_A, dim = A@modes)
   return(as.tensor(reshaped_A))
 }
+
+#' Calculate the Spark of a Given Matrix
+#'
+#' The Spark of a matrix is the smallest number of linearly dependent columns. 
+#' This function takes a matrix \code{Phi} as input and returns the Spark of 
+#' the matrix, \code{K}, and the indices of the columns that make up the 
+#' linearly dependent set, \code{columns}.
+#'
+#' @param Phi a matrix
+#' 
+#' @return A list with two elements: \code{K}, an integer specifying the 
+#'   Spark of the matrix, and \code{columns}, a numeric vector of indices 
+#'   specifying the columns that make up the linearly dependent set.
+#' 
+#' @details This function iteratively chooses subsets of columns of \code{Phi} 
+#' and checks if they are linearly dependent. It stops when it finds the 
+#' smallest set of linearly dependent columns. If all subsets of columns are 
+#' linearly independent, it returns the rank of the matrix plus one and all 
+#' columns of the matrix.
+#' 
+#' @examples
+#' Phi <- matrix(c(1, 2, 3, 2, 4, 6, 3, 6, 9), nrow = 3, ncol = 3)
+#' spark(Phi)
+#' 
+#' @export
+spark <- function(Phi) {
+  # Get the rank of the matrix
+  R <- qr(Phi)$rank
+  
+  # Number of rows and columns of Phi
+  N <- ncol(Phi)
+  
+  # Iterate over the number of columns to select
+  for (K in 1:(R + 1)) {
+    
+    # Check if we have already selected all columns
+    if (K > N) {
+      break
+    }
+    
+    # Compute the number of possible choices of K columns from N
+    numChoices <- choose(N, K)
+    
+    # Check if the number of choices is reasonable
+    if (numChoices > 160000) {
+      stop("N choose K too large!")
+    }
+    
+    # Generate all possible choices of K columns out of N
+    choices <- combn(1:N, K)
+    
+    # Iterate over the choices
+    for (c in 1:numChoices) {
+      choice <- choices[, c]
+      Phik <- Phi[, choice]
+      
+      # Check if the columns are linearly dependent
+      if (qr(Phik)$rank < K) {
+        return(list(K = K, columns = choice))
+      }
+    }
+  }
+  
+  # All columns up to rank K are linearly independent
+  return(list(K = R + 1, columns = 1:N))
+}
+

@@ -12,9 +12,21 @@ cp_rank_selection(tnsr, max_rank)
 \item{max_rank}{The maximum rank to consider.}
 }
 \value{
-The selected rank.
+A list with the selected rank and a vector of the approximation error
+for each rank.
 }
 \description{
 This function selects the rank of a tensor based on the ratio of the
 approximation error between different rank values obtained by CP decomposition.
+Additionally, it gives a plot for visual inspection of the fit
+}
+\examples{
+# Load data
+data(traditional_data)
+
+# Convert data to tensor
+traditional_tensor <- as.tensor(traditional_data)
+
+# Select the rank of the tensor using CP decomposition
+cp_rank_selection(traditional_tensor, 20)
 }
