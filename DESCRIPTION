@@ -17,4 +17,4 @@ Depends:
     R (>= 2.10),
     rTensor 
 LazyData: true
-Imports: rTensor
+Imports: rTensor, abind

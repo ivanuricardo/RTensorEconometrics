@@ -1,3 +1,4 @@
 export("reconstruct_cp", "matrix_ols_sim", "tensor_inverse", "ttt", 
-       "HOOLS", "cp_rank_selection", "tucker_rank_selection", "spark")
-import(rTensor)
+       "HOOLS", "cp_rank_selection", "tucker_rank_selection", "spark",
+       "cp_uniqueness")
+import(rTensor, abind)

@@ -103,3 +103,43 @@ tucker_rank_selection <- function(tnsr, c = log(tnsr@modes[1])/(10*tnsr@modes[1]
   return(est_ranks = est_ranks)
 }
 
+#' Check for Uniqueness of CP Decomposition
+#'
+#' Determines whether a CP decomposition is unique based on sufficient and
+#' necessary conditions.
+#'
+#' @param cp_object A CP decomposition object from the 'cptensor' package.
+#'
+#' @return A list with boolean values for the sufficient and necessary conditions
+#'
+#' @details The function checks for uniqueness of a CP decomposition based on
+#' sufficient and necessary conditions. The sufficient condition checks if the
+#' sum of the ranks of each factor matrix is greater than or equal to 2 times
+#' the rank of the tensor plus the number of modes minus one. The necessary
+#' condition checks if the minimum product of ranks of each factor matrix is
+#' greater than or equal to the rank of the tensor.
+#'
+#' @examples
+#' library(rTensor)
+#' X <- rand_tensor(c(4,5,6))
+#' fit <- cp(X, 3)
+#' cp_uniqueness(fit)
+#'
+#' @importFrom stats qr
+#' @export
+cp_uniqueness <- function(cp_object) {
+  # extract chosen rank and number of modes from original tensor
+  R <- length(cp_object$lambdas)
+  N <- cp_object$est@num_modes
+  
+  # Find the sum of k ranks of each factor matrix
+  sum_ranks <- sum(sapply(cp_object$U, function(matr) spark(matr)$K))
+  suff_cond <- sum_ranks >= 2 * R + (N - 1)
+  
+  # Find the product of ranks of each factor matrix
+  rank_vec <- sapply(cp_object$U, function(matr) qr(matr)$rank)
+  prod_rank <- prod(rank_vec) / rank_vec
+  necessary_cond <- min(prod_rank) >= R
+  
+  return(list(suff_cond=suff_cond, necessary_cond=necessary_cond))
+}
