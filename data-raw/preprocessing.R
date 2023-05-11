@@ -3,6 +3,7 @@ library(readxl)
 library(tidyverse)
 library(reshape2)
 library(bootUR)
+library(abind)
 set.seed(20230502)
 
 ###### Constructing Data
@@ -35,17 +36,18 @@ usethis::use_data(traditional_data_levels, overwrite = TRUE)
 # Convert to stationarity and remove first two observations
 stat_traditional <- order_integration(traditional_gvar)
 traditional_data <- stat_traditional$diff_data[3:nrow(stat_traditional$diff_data), ]
+traditional_data_diff <- traditional_data
 
-usethis::use_data(traditional_data, overwrite = TRUE)
+usethis::use_data(traditional_data_diff, overwrite = TRUE)
 
 # create 3-dimensional tensor of ROW
-tensor_data <- traditional_data %>% 
+tensor_data_diff <- traditional_data %>% 
   as.matrix(byrow = TRUE) %>% 
   array(dim = c(161, 3, 32)) %>% 
   aperm(c(1, 3, 2))
 
-usethis::use_data(tensor_data, overwrite = TRUE)
-saveRDS(tensor_data, "tensor_data.rds")
+usethis::use_data(tensor_data_diff, overwrite = TRUE)
+saveRDS(tensor_data_diff, "tensor_data_diff.rds")
 
 tensor_data_levels <- traditional_data_levels %>%
   as.matrix(byrow = TRUE) %>% 
@@ -53,3 +55,6 @@ tensor_data_levels <- traditional_data_levels %>%
   aperm(c(1, 3, 2))
 
 usethis::use_data(tensor_data_levels, overwrite = TRUE)
+
+tensor_data <- abind(tensor_data_diff[,,1], tensor_data_levels[3:163,,2:3], along = 3)
+usethis::use_data(tensor_data, overwrite = TRUE)
