@@ -4,6 +4,7 @@ library(tidyverse)
 library(reshape2)
 library(bootUR)
 library(abind)
+library(rTensor)
 set.seed(20230502)
 
 ###### Constructing Data
@@ -58,3 +59,7 @@ usethis::use_data(tensor_data_levels, overwrite = TRUE)
 
 tensor_data <- abind(tensor_data_diff[,,1], tensor_data_levels[3:163,,2:3], along = 3)
 usethis::use_data(tensor_data, overwrite = TRUE)
+
+traditional_data <- unfold(as.tensor(tensor_data), row_idx = 1, col_idx = c(3,2))
+colnames(traditional_data) <- colnames(traditional_data_levels)
+usethis::use_data(traditional_data, overwrite = TRUE)
