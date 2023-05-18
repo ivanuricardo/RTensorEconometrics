@@ -1,4 +1,5 @@
 export("reconstruct_cp", "matrix_ols_sim", "tensor_inverse", "ttt", 
        "HOOLS", "cp_rank_selection", "tucker_rank_selection", "spark",
-       "cp_uniqueness")
+       "cp_uniqueness", "C1_reg", "C2_reg", "D1_reg", "D2_reg", 
+       "cp_regression")
 import(rTensor, abind)

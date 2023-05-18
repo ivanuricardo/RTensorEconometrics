@@ -93,5 +93,263 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
   return(ols_hat)
 }
 
-#################################################
+#' Compute C1 regression
+#'
+#' This function computes the C1 regression term for the CP regression
+#' algorithm.
+#'
+#' @param init_list The initial list of CP decomposition factors.
+#' @param Y The target tensor.
+#' @param X The input tensor.
+#' @param R The rank of the CP decomposition.
+#'
+#' @return The C1 regularization factor matrix.
+#' 
+#' @seealso
+#' \code{\link{C2_reg}}, \code{\link{D1_reg}}, \code{\link{D2_reg}}
+#' \code{\link{cp_regression}}
+#'
+#' @export
+C1_reg <- function(init_list, Y, X, R) {
+  C1 <- matrix(nrow = prod(Y@modes), ncol = 0)
+  
+  for (r in 1:R) {
+    init_CP_list <- init_list[-1]
+    rcol_CP <- lapply(init_CP_list, function(m) m[, r])
+    init_outer <- Reduce(function(x, y) x %o% y, rcol_CP)
+    Cr <- ttt(X, as.tensor(init_outer), alongA = 3, alongB = 1)
+    unfolded_Cr <- unfold(Cr, c(1, 3, 4), 2)
+    C1 <- cbind(C1, unfolded_Cr@data)
+  }
+  
+  vec_B1 <- solve(t(C1) %*% C1) %*% (t(C1) %*% vec(Y))
+  B1 <- matrix(vec_B1, ncol = R)
+  
+  return(B1)
+}
+
+#' Compute C2 regression for CP regression
+#'
+#' This function computes the C2 regression term for the CP regression algorithm.
+#' It is used as part of the larger CP regression algorithm to estimate the factor
+#' matrix associated with the first dimension of the target tensor.
+#'
+#' @param init_list The initial list of CP decomposition factors.
+#' @param Y The target tensor.
+#' @param X The input tensor.
+#' @param R The rank of the CP decomposition.
+#'
+#' @return The C2 regression factor matrix.
+#'
+#' @seealso
+#' \code{\link{C1_reg}}, \code{\link{D1_reg}}, \code{\link{D2_reg}}
+#' \code{\link{cp_regression}}
+#' 
+#' @export
+C2_reg <- function(init_list, Y, X, R) {
+  C2 <- matrix(nrow = prod(Y@modes), ncol = 0)
+  
+  for (r in 1:R) {
+    init_CP_list <- init_list[-2]
+    rcol_CP <- lapply(init_CP_list, function(m) m[, r])
+    init_outer <- Reduce(function(x, y) x %o% y, rcol_CP)
+    Cr <- ttt(X, as.tensor(init_outer), alongA = 2, alongB = 1)
+    unfolded_Cr <- unfold(Cr, c(1, 3, 4), 2)
+    C2 <- cbind(C2, unfolded_Cr@data)
+  }
+  
+  vec_B2 <- solve(t(C2) %*% C2) %*% (t(C2) %*% vec(Y))
+  B2 <- matrix(vec_B2, ncol = R)
+  
+  return(B2)
+}
+
+#' Compute D1 regression for CP regression
+#'
+#' This function computes the D1 regression term for the CP regression algorithm.
+#' It is used as part of the larger CP regression algorithm to estimate the factor
+#' matrix associated with the third dimension of the target tensor.
+#'
+#' @param init_list The initial list of CP decomposition factors.
+#' @param Y The response tensor
+#' @param X The predictor tensor
+#' @param R The CP rank
+#'
+#' @return The D1 regression factor matrix.
+#'
+#' @seealso
+#' \code{\link{C1_reg}}, \code{\link{C2_reg}}, \code{\link{D2_reg}}
+#' \code{\link{cp_regression}}
+D1_reg <- function(init_list, Y, X, R) {
+  D1 <- matrix(nrow = Ddims[1], ncol = 0)
+  for (r in 1:R) {
+    init_DP_list <- init_list[-3]
+    rcol_DP <- lapply(init_DP_list, function(n) n[, r])
+    init_DP_outer <- Reduce(function(x, y) x %o% y, rcol_DP)
+    Dr <- ttt(X, as.tensor(init_DP_outer), alongA = 2:3, alongB = 1:2)
+    D1 <- cbind(D1, vec(Dr))
+  }
+  
+  # Unfold Y along the dimensions not considered
+  Y_unfolded <- unfold(Y, row_idx = setdiff(1:3, 2), col_idx = 2)@data
+  
+  # Compute the estimate for B^(3) through OLS
+  B3 <- t(solve(t(D1) %*% D1) %*% t(D1) %*% Y_unfolded)
+  return(B3)
+}
+
+#' Compute D2 regression for CP regression
+#'
+#' This function computes the D2 regression term for the CP regression algorithm.
+#' It is used as part of the larger CP regression algorithm to estimate the factor
+#' matrix associated with the fourth dimension of the target tensor.
+#'
+#' @param init_list The initial list of CP decomposition factors.
+#' @param X The tensor X used in the CP regression.
+#' @param Y The target tensor Y used in the CP regression.
+#' @param R The rank of the CP decomposition.
+#'
+#' @return The D2 regression factor matrix.
+#'
+#' @seealso
+#' \code{\link{C1_reg}}, \code{\link{C2_reg}}, \code{\link{D1_reg}}
+#' \code{\link{cp_regression}}
+D2_reg <- function(init_list, X, Y, R) {
+  D2 <- matrix(nrow = Ddims[2], ncol = 0)
+  for (r in 1:R) {
+    init_DP_list <- init_list[-4]
+    rcol_DP <- lapply(init_DP_list, function(n) n[, r])
+    init_DP_outer <- Reduce(function(x, y) x %o% y, rcol_DP)
+    Dr <- ttt(X, as.tensor(init_DP_outer), alongA = 2:3, alongB = 1:2)
+    D2 <- cbind(D2, vec(Dr))
+  }
+  
+  # Unfold Y along the dimensions not considered
+  Y_unfolded <- unfold(Y, row_idx = setdiff(1:3, 3), col_idx = 3)@data
+  
+  # Compute the estimate for B^(4) through OLS
+  B4 <- t(solve(t(D2) %*% D2) %*% t(D2) %*% Y_unfolded)
+  return(B4)
+}
+
+#' Check convergence condition for CP regression
+#'
+#' This function checks the convergence condition for the CP regression algorithm.
+#' It compares the Frobenius norm of the difference between the initial tensor and
+#' the reconstructed tensor with the convergence threshold. If the difference is
+#' below the threshold, the algorithm is considered converged.
+#'
+#' @param init_list The initial list of CP decomposition factors.
+#' @param R The rank of the CP decomposition.
+#' @param init_B The initial tensor B used in the CP regression.
+#' @param list_SSE A list storing the sum of squared errors (SSE) at each iteration.
+#' @param num_iter The current iteration number.
+#'
+#' @return A list containing the updated initial tensor B, convergence status, and
+#' updated list of SSE values.
+#'
+#' @examples
+#' init_list <- list(matrix(1:6, ncol = 2), matrix(7:12, ncol = 2))
+#' R <- 3
+#' init_B <- # initialize initial tensor B
+#' list_SSE <- c(999999)
+#' num_iter <- 0
+#' convThresh <- 1e-05
+#' conv_cond(init_list, R, init_B, list_SSE, num_iter)
+#'
+#' @seealso
+#' \code{\link{cp_regression}}
+conv_cond <- function(init_list, R, init_B, list_SSE, num_iter) {
+  reconstructed_list <- reconstruct_cp(init_list[[1]], init_list[[2]],
+                                       init_list[[3]], init_list[[4]], R)
+  fnorm_list <- fnorm(as.tensor(init_B@data - reconstructed_list))
+  list_SSE[num_iter + 1] <- fnorm_list
+  
+  if (abs(list_SSE[num_iter + 1] - list_SSE[num_iter]) < convThresh) {
+    converged <- TRUE
+  } else {
+    converged <- FALSE
+  }
+  
+  init_B <- as.tensor(reconstructed_list)
+  
+  return(list(init_B = init_B, converged = converged, list_SSE = list_SSE))
+}
+
+#' Perform CP regression
+#'
+#' This function performs CP regression to estimate the tensor B given the input
+#' tensor Y and covariate tensor X.
+#'
+#' @param Y The input tensor.
+#' @param X The covariate tensor.
+#' @param R The rank of the CP decomposition.
+#' @param obs_dim_X The observed dimensions of the covariate tensor X.
+#' @param obs_dim_Y The observed dimensions of the input tensor Y.
+#' @param convThresh The convergence threshold for the CP regression algorithm.
+#' @param max_iter The maximum number of iterations.
+#' @param seed The random seed for reproducibility.
+#'
+#' @return A list containing the estimated tensor B, factor matrices, convergence
+#' status, and the number of iterations.
+#'
+#' @examples
+#' Y <- # input tensor
+#' X <- # covariate tensor
+#' R <- 3
+#' obs_dim_X <- # observed dimensions of X
+#' obs_dim_Y <- # observed dimensions of Y
+#' cp_regression(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
+#'               max_iter = 500, seed = 0)
+#'
+#' @seealso
+#' \code{\link{C1_reg}}, \code{\link{C2_reg}}, \code{\link{D1_reg}},
+#' \code{\link{D2_reg}}, \code{\link{conv_cond}}
+cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
+                          max_iter = 500, seed = 0) {
+  if (seed > 0) set.seed(seed)
+  
+  # Generate initial random tensor and perform CP decomposition
+  init_B <- rand_tensor(c(X@modes[-obs_dim_X], Y@modes[-obs_dim_Y]))
+  init_CP <- cp(init_B, R)
+  
+  # Store the initial CP decomposition factors in a list
+  init_list <- init_CP$U
+  
+  converged <- FALSE
+  num_iter <- 0
+  list_SSE <- c(999999)
+  
+  while (!(converged) && num_iter < max_iter) {
+    num_iter <- num_iter + 1
+    Ddims <- c(Y@modes[1] * Y@modes[3], Y@modes[1] * Y@modes[2])
+    
+    # First dimension
+    init_list[[1]] <- C1_reg(init_list = init_list, Y = Y, X = X, R = R)
+    
+    # Second dimension
+    init_list[[2]] <- C2_reg(init_list = init_list, Y = Y, X = X, R = R)
+    
+    # Third dimension
+    init_list[[3]] <- D1_reg(init_list = init_list)
+    
+    # Fourth dimension
+    init_list[[4]] <- D2_reg(init_list = init_list)
+    
+    ## Convergence Condition
+    converge_cond <- conv_cond(init_list = init_list, R = R, init_B = init_B,
+                               list_SSE = list_SSE, num_iter = num_iter)
+    init_B <- converge_cond$init_B
+    converged <- converge_cond$converged
+    list_SSE <- converge_cond$list_SSE
+    
+    if (converged) {
+      break  # Exit the loop if converged
+    }
+  }
+  
+  return(list(B = init_B, factor_mat = init_list, converged = converged,
+              num_iter = num_iter))
+}
+
 
