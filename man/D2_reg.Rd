@@ -4,7 +4,7 @@
 \alias{D2_reg}
 \title{Compute D2 regression for CP regression}
 \usage{
-D2_reg(init_list, X, Y, R)
+D2_reg(init_list, X, Y, R, Ddims)
 }
 \arguments{
 \item{init_list}{The initial list of CP decomposition factors.}
@@ -14,6 +14,8 @@ D2_reg(init_list, X, Y, R)
 \item{Y}{The target tensor Y used in the CP regression.}
 
 \item{R}{The rank of the CP decomposition.}
+
+\item{Ddims}{Vector with dimensions of D}
 }
 \value{
 The D2 regression factor matrix.

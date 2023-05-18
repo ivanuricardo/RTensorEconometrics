@@ -4,7 +4,7 @@
 \alias{D1_reg}
 \title{Compute D1 regression for CP regression}
 \usage{
-D1_reg(init_list, Y, X, R)
+D1_reg(init_list, Y, X, R, Ddims)
 }
 \arguments{
 \item{init_list}{The initial list of CP decomposition factors.}
@@ -14,6 +14,8 @@ D1_reg(init_list, Y, X, R)
 \item{X}{The predictor tensor}
 
 \item{R}{The CP rank}
+
+\item{Ddims}{Vector with dimensions of D}
 }
 \value{
 The D1 regression factor matrix.

@@ -174,13 +174,14 @@ C2_reg <- function(init_list, Y, X, R) {
 #' @param Y The response tensor
 #' @param X The predictor tensor
 #' @param R The CP rank
+#' @param Ddims Vector with dimensions of D
 #'
 #' @return The D1 regression factor matrix.
 #'
 #' @seealso
 #' \code{\link{C1_reg}}, \code{\link{C2_reg}}, \code{\link{D2_reg}}
 #' \code{\link{cp_regression}}
-D1_reg <- function(init_list, Y, X, R) {
+D1_reg <- function(init_list, Y, X, R, Ddims) {
   D1 <- matrix(nrow = Ddims[1], ncol = 0)
   for (r in 1:R) {
     init_DP_list <- init_list[-3]
@@ -208,13 +209,14 @@ D1_reg <- function(init_list, Y, X, R) {
 #' @param X The tensor X used in the CP regression.
 #' @param Y The target tensor Y used in the CP regression.
 #' @param R The rank of the CP decomposition.
+#' @param Ddims Vector with dimensions of D
 #'
 #' @return The D2 regression factor matrix.
 #'
 #' @seealso
 #' \code{\link{C1_reg}}, \code{\link{C2_reg}}, \code{\link{D1_reg}}
 #' \code{\link{cp_regression}}
-D2_reg <- function(init_list, X, Y, R) {
+D2_reg <- function(init_list, X, Y, R, Ddims) {
   D2 <- matrix(nrow = Ddims[2], ncol = 0)
   for (r in 1:R) {
     init_DP_list <- init_list[-4]
@@ -331,10 +333,11 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
     init_list[[2]] <- C2_reg(init_list = init_list, Y = Y, X = X, R = R)
     
     # Third dimension
-    init_list[[3]] <- D1_reg(init_list = init_list)
-    
+    init_list[[3]] <- D1_reg(init_list = init_list, Y = Y, X = X, R = R, 
+                             Ddims= Ddims)
     # Fourth dimension
-    init_list[[4]] <- D2_reg(init_list = init_list)
+    init_list[[4]] <- D2_reg(init_list = init_list, Y = Y, X = X, R = R, 
+                             Ddims= Ddims)
     
     ## Convergence Condition
     converge_cond <- conv_cond(init_list = init_list, R = R, init_B = init_B,
