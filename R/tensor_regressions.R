@@ -199,7 +199,7 @@ cp_regression2 <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
   
   converged <- FALSE
   num_iter <- 0
-  while (!converged || num_iter < max_iter) {
+  while (!converged && num_iter < max_iter) {
   # Initialize matrices C and D
     num_iter <- num_iter + 1
     Ddims <- c(Y@modes[1] * Y@modes[3], Y@modes[1] * Y@modes[2])
@@ -265,5 +265,8 @@ cp_regression2 <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
     # Compute the estimate for B^(3) through OLS
     B4 <- t(solve(t(D2) %*% D2) %*% t(D2) %*% Y_unfolded)
     init_list[[4]] <- B4
+    
+    ## Convergence Condition
+    
   }
 }
