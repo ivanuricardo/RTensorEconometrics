@@ -250,18 +250,11 @@ D2_reg <- function(init_list, X, Y, R, Ddims) {
 #' @return A list containing the updated initial tensor B, convergence status, and
 #' updated list of SSE values.
 #'
-#' @examples
-#' init_list <- list(matrix(1:6, ncol = 2), matrix(7:12, ncol = 2))
-#' R <- 3
-#' init_B <- # initialize initial tensor B
-#' list_SSE <- c(999999)
-#' num_iter <- 0
-#' convThresh <- 1e-05
-#' conv_cond(init_list, R, init_B, list_SSE, num_iter)
 #'
 #' @seealso
 #' \code{\link{cp_regression}}
-conv_cond <- function(init_list, R, init_B, list_SSE, num_iter) {
+conv_cond <- function(init_list, R, init_B, list_SSE, num_iter, 
+                      convThresh) {
   reconstructed_list <- reconstruct_cp(init_list[[1]], init_list[[2]],
                                        init_list[[3]], init_list[[4]], R)
   fnorm_list <- fnorm(as.tensor(init_B@data - reconstructed_list))
@@ -341,7 +334,8 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
     
     ## Convergence Condition
     converge_cond <- conv_cond(init_list = init_list, R = R, init_B = init_B,
-                               list_SSE = list_SSE, num_iter = num_iter)
+                               list_SSE = list_SSE, num_iter = num_iter,
+                               convThresh = convThresh)
     init_B <- converge_cond$init_B
     converged <- converge_cond$converged
     list_SSE <- converge_cond$list_SSE

@@ -4,7 +4,7 @@
 \alias{conv_cond}
 \title{Check convergence condition for CP regression}
 \usage{
-conv_cond(init_list, R, init_B, list_SSE, num_iter)
+conv_cond(init_list, R, init_B, list_SSE, num_iter, convThresh)
 }
 \arguments{
 \item{init_list}{The initial list of CP decomposition factors.}
@@ -26,16 +26,6 @@ This function checks the convergence condition for the CP regression algorithm.
 It compares the Frobenius norm of the difference between the initial tensor and
 the reconstructed tensor with the convergence threshold. If the difference is
 below the threshold, the algorithm is considered converged.
-}
-\examples{
-init_list <- list(matrix(1:6, ncol = 2), matrix(7:12, ncol = 2))
-R <- 3
-init_B <- # initialize initial tensor B
-list_SSE <- c(999999)
-num_iter <- 0
-convThresh <- 1e-05
-conv_cond(init_list, R, init_B, list_SSE, num_iter)
-
 }
 \seealso{
 \code{\link{cp_regression}}

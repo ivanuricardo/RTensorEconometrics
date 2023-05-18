@@ -44,15 +44,6 @@
 #'
 #' @format An array with dimensions 161 x 32 x 5.
 #'
-#' @dimnames The array has the following dimension names:
-#'   \describe{
-#'     \item{Time_Index}{The time index (1 to 161)}
-#'     \item{Country_Index}{The country index (1 to 32)}
-#'     \item{Economic_Variable_Index}{The economic variable index (1 to 5)}
-#'   }
-#'
-#' @dim The array has 161 rows, 32 columns, and 5 economic variables.
-#'
 #' @source This data set is simulated for demonstration purposes.
 #'
 #' @examples
@@ -110,15 +101,6 @@
 #' dimension represents the economic variable index.
 #'
 #' @format An array with dimensions 161 x 32 x 5.
-#'
-#' @dimnames The array has the following dimension names:
-#'   \describe{
-#'     \item{Time_Index}{The time index (1 to 161)}
-#'     \item{Country_Index}{The country index (1 to 32)}
-#'     \item{Economic_Variable_Index}{The economic variable index (1 to 5)}
-#'   }
-#'
-#' @dim The array has 161 rows, 32 columns, and 5 economic variables.
 #'
 #' @source This data set is simulated for demonstration purposes.
 #'
