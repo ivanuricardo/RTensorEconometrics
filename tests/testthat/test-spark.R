@@ -7,14 +7,14 @@ test_that("spark_output", {
   
   # Bonus for completeness
   mat5 <- matrix(c(1,2,3,2,3,4,3,5,7), nrow = 3)
-  mat6 <- matrix(c(1,1,0,1,1,0,0,0,1,0,1,1))
+  mat6 <- matrix(c(1,1,0,1,1,0,0,0,1,0,1,1), nrow = 6)
   
   expected1 <- 1
   expected2 <- 2
   expected3 <- 3
   expected4 <- 4
   expected5 <- 3
-  expected6 <- 2
+  expected6 <- 3
     
   result1 <- spark(mat1)
   result2 <- spark(mat2)

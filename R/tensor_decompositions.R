@@ -14,11 +14,11 @@
 #' @param r rank of the CP decomposition
 #' @param lambda vector of CP decomposition coefficients, defaults to vector of 1's
 #' @return Reconstructed CP tensor
-reconstruct_cp <- function(A, B, C, r, lambda = rep(1, r)) {
-  dim_tens <- c(dim(A)[1], dim(B)[1], dim(C)[1])
+reconstruct_cp <- function(A, B, C, D, r, lambda = rep(1, r)) {
+  dim_tens <- c(dim(A)[1], dim(B)[1], dim(C)[1], dim(D)[1])
   tens <- array(data = 0, dim = dim_tens)
   for(i in 1:r) {
-    outer_prod <- lambda[i] * A[,i] %o% B[,i] %o% C[,i]
+    outer_prod <- lambda[i] * A[,i] %o% B[,i] %o% C[,i] %o% D[,i]
     tens <- tens + outer_prod
   }
   return(tens)
