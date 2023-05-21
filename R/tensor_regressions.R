@@ -212,8 +212,8 @@ conv_cond <- function(init_list, R, init_B, list_SSE, num_iter,
 
 #' Perform CP regression
 #'
-#' This function performs CP regression to estimate the tensor B given the input
-#' tensor Y and covariate tensor X.
+#' This function performs CP regression to estimate the tensor B given
+#' the input tensor Y and covariate tensor X.
 #'
 #' @param Y The input tensor.
 #' @param X The covariate tensor.
@@ -224,8 +224,8 @@ conv_cond <- function(init_list, R, init_B, list_SSE, num_iter,
 #' @param max_iter The maximum number of iterations.
 #' @param seed The random seed for reproducibility.
 #'
-#' @return A list containing the estimated tensor B, factor matrices, convergence
-#' status, and the number of iterations.
+#' @return A list containing the estimated tensor B, factor matrices, 
+#' convergence status, and the number of iterations.
 #'
 #' @examples
 #' Y <- # input tensor
@@ -248,7 +248,12 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
   
   # Generate initial random tensor and perform CP decomposition
   init_B <- rand_tensor(c(X@modes[-obs_dim_X], Y@modes[-obs_dim_Y]))
-  init_CP <- cp(init_B, R)
+  init_CP <- list(
+    matrix(rnorm(X@modes[2] * R), nrow = X@modes[2]),
+    matrix(rnorm(X@modes[3] * R), nrow = X@modes[3]),
+    matrix(rnorm(Y@modes[2] * R), nrow = Y@modes[2]),
+    matrix(rnorm(Y@modes[3] * R), nrow = Y@modes[3])
+  )
   
   # Store the initial CP decomposition factors in a list
   init_list <- init_CP$U
@@ -271,7 +276,7 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
       }
     }
    
-    # Convergence Condition
+    # check convergence condition
     converge_cond <- conv_cond(init_list = init_list, R = R, init_B = init_B,
                                list_SSE = list_SSE, num_iter = num_iter,
                                convThresh = convThresh)
