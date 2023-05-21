@@ -108,7 +108,7 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
 #' @return The factor matrix associated with the X regression
 #' 
 #' @seealso
-#' \code{\link{C2_reg}}, \code{\link{D1_reg}}, \code{\link{D2_reg}}
+#' \code{\link{y_regression}}, \code{\link{conv_cond}}
 #' \code{\link{cp_regression}}
 #'
 #' @export
@@ -185,8 +185,8 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
 #' @return A list containing the updated initial tensor B, convergence status, and
 #' updated list of SSE values.
 #'
-#'
 #' @seealso
+#' \code{\link{y_regression}}, \code{\link{x_regression}} 
 #' \code{\link{cp_regression}}
 conv_cond <- function(init_list, R, init_B, list_SSE, num_iter, 
                       convThresh) {
@@ -233,8 +233,8 @@ conv_cond <- function(init_list, R, init_B, list_SSE, num_iter,
 #'               max_iter = 500, seed = 0)
 #'
 #' @seealso
-#' \code{\link{C1_reg}}, \code{\link{C2_reg}}, \code{\link{D1_reg}},
-#' \code{\link{D2_reg}}, \code{\link{conv_cond}}
+#' \code{\link{y_regression}}, \code{\link{x_regression}} 
+#' \code{\link{conv_cond}}
 cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
                           max_iter = 500, seed = 0) {
   if (seed > 0) set.seed(seed)
@@ -254,22 +254,17 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
     num_iter <- num_iter + 1
     Ddims <- c(Y@modes[1] * Y@modes[3], Y@modes[1] * Y@modes[2])
     
-    # First dimension
-    init_list[[1]] <- x_regression(init_list = init_list, Y = Y, X = X,
-                                   R = R, idx = 1)
-    
-    # Second dimension
-    init_list[[2]] <- x_regression(init_list = init_list, Y = Y, X = X,
-                                   R = R, idx = 2)
-    
-    # Third dimension
-    init_list[[3]] <- y_regression(init_list = init_list, Y = Y, X = X, R = R, 
-                      Ddims= Ddims, idx = 3)
-    # Fourth dimension
-    init_list[[4]] <- y_regression(init_list = init_list, Y = Y, X = X, R = R, 
-                             Ddims= Ddims, idx = 4)
-    
-    ## Convergence Condition
+    for (dim in 1:init_B@num_modes) {
+      if (dim < (init_B@num_modes/2 + 1)) {
+        init_list[[dim]] <- x_regression(init_list = init_list, Y = Y, X = X,
+                                   R = R, idx = dim)
+      } else {
+        init_list[[dim]] <- y_regression(init_list = init_list, Y = Y, X = X,
+                                         R = R, Ddims= Ddims, idx = dim)
+      }
+    }
+   
+    # Convergence Condition
     converge_cond <- conv_cond(init_list = init_list, R = R, init_B = init_B,
                                list_SSE = list_SSE, num_iter = num_iter,
                                convThresh = convThresh)
