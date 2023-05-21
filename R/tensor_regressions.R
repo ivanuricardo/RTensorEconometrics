@@ -149,6 +149,8 @@ x_regression <- function(init_list, Y, X, R, idx) {
 #' @seealso
 #' \code{\link{x_regression}}, \code{\link{conv_cond}}
 #' \code{\link{cp_regression}}
+#'
+#' @export
 y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   D1 <- matrix(nrow = Ddims[(idx-2)], ncol = 0)
   y_idx <- idx - 1
@@ -188,6 +190,8 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
 #' @seealso
 #' \code{\link{y_regression}}, \code{\link{x_regression}} 
 #' \code{\link{cp_regression}}
+#'
+#' @export
 conv_cond <- function(init_list, R, init_B, list_SSE, num_iter, 
                       convThresh) {
   reconstructed_list <- reconstruct_cp(init_list[[1]], init_list[[2]],
@@ -232,9 +236,12 @@ conv_cond <- function(init_list, R, init_B, list_SSE, num_iter,
 #' cp_regression(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
 #'               max_iter = 500, seed = 0)
 #'
+#' @export
 #' @seealso
 #' \code{\link{y_regression}}, \code{\link{x_regression}} 
 #' \code{\link{conv_cond}}
+#' 
+#' @export
 cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
                           max_iter = 500, seed = 0) {
   if (seed > 0) set.seed(seed)
