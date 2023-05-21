@@ -246,17 +246,14 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
                           max_iter = 500, seed = 0) {
   if (seed > 0) set.seed(seed)
   
-  # Generate initial random tensor and perform CP decomposition
+  # Generate initial random tensor and random CP decomposition
   init_B <- rand_tensor(c(X@modes[-obs_dim_X], Y@modes[-obs_dim_Y]))
-  init_CP <- list(
+  init_list <- list(
     matrix(rnorm(X@modes[2] * R), nrow = X@modes[2]),
     matrix(rnorm(X@modes[3] * R), nrow = X@modes[3]),
     matrix(rnorm(Y@modes[2] * R), nrow = Y@modes[2]),
     matrix(rnorm(Y@modes[3] * R), nrow = Y@modes[3])
   )
-  
-  # Store the initial CP decomposition factors in a list
-  init_list <- init_CP$U
   
   converged <- FALSE
   num_iter <- 0
