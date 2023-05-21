@@ -28,5 +28,6 @@ the reconstructed tensor with the convergence threshold. If the difference is
 below the threshold, the algorithm is considered converged.
 }
 \seealso{
+\code{\link{y_regression}}, \code{\link{x_regression}} 
 \code{\link{cp_regression}}
 }

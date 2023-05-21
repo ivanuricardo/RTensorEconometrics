@@ -51,6 +51,6 @@ cp_regression(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
 
 }
 \seealso{
-\code{\link{C1_reg}}, \code{\link{C2_reg}}, \code{\link{D1_reg}},
-\code{\link{D2_reg}}, \code{\link{conv_cond}}
+\code{\link{y_regression}}, \code{\link{x_regression}} 
+\code{\link{conv_cond}}
 }
