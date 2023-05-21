@@ -313,7 +313,7 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
   
   converged <- FALSE
   num_iter <- 0
-  list_SSE <- c(999999)
+  list_SSE <- c(1e05)
   
   while (!(converged) && num_iter < max_iter) {
     num_iter <- num_iter + 1
