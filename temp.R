@@ -1,4 +1,3 @@
-
 # Only works with tensors of 3 dimensions and observation in the first dim
 devtools::install_github("https://github.com/ivanuricardo/TensorEconometrics")
 library(TensorEconometrics)
