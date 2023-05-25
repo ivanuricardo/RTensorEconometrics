@@ -2,6 +2,7 @@
 
 #' Reconstruct CP tensor from factor matrices
 #' DEPRECIATED
+#' add new files
 #'
 #' Reconstructs the original CP tensor from its factor matrices, i.e., given the factor matrices
 #' A, B, and C (corresponding to the three modes of the tensor) and a vector of CP decomposition
