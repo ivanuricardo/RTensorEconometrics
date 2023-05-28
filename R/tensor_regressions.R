@@ -115,7 +115,7 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
 x_regression <- function(init_list, Y, X, R, idx) {
   X_reg <- matrix(nrow = prod(Y@modes), ncol = 0)
   
-  x_lambdas <- c()
+  norm_cols <- function(mat) norm(mat, type = "2")
   for (r in 1:R) {
     reduced_CP_list <- init_list[-idx]
     factor_column <- lapply(reduced_CP_list, function(m) m[, r])
@@ -124,13 +124,14 @@ x_regression <- function(init_list, Y, X, R, idx) {
               alongB = 1)
     unfolded_Cr <- unfold(Cr, c(1, 3, 4), 2)
     X_reg <- cbind(X_reg, unfolded_Cr@data)
-    
   }
   
   vec_B1 <- solve(crossprod(X_reg)) %*% (crossprod(X_reg, vec(Y)))
   B1 <- matrix(vec_B1, ncol = R)
+  x_lambdas <- apply(B1, 2, norm_cols)
+  B1_norm <- sweep(B1, 2, x_lambdas, "/")
   
-  return(list(B1 = B1, x_lambdas = x_lambdas))
+  return(list(B1 = B1_norm, x_lambdas = x_lambdas))
 }
 
 #' Regression associated with Y
@@ -156,6 +157,7 @@ x_regression <- function(init_list, Y, X, R, idx) {
 y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   D1 <- matrix(nrow = Ddims[(idx-2)], ncol = 0)
   y_idx <- idx - 1
+  norm_cols <- function(mat) norm(mat, type = "2")
   for (r in 1:R) {
     reduced_CP_list <- init_list[-idx]
     factor_column <- lapply(reduced_CP_list, function(n) n[, r])
@@ -170,7 +172,10 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   
   # Compute the estimate for B^(3) through OLS
   B3 <- t(solve(crossprod(D1)) %*% t(D1) %*% Y_unfolded)
-  return(B3)
+  y_lambdas <- apply(B3, 2, norm_cols)
+  B3_norm <- sweep(B3, 2, y_lambdas, "/")
+  
+  return(list(B3 = B3_norm, y_lambdas = y_lambdas))
 }
 
 #' Check convergence condition for CP regression
@@ -265,14 +270,20 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
     num_iter <- num_iter + 1
     Ddims <- c(Y@modes[1] * Y@modes[3], Y@modes[1] * Y@modes[2])
     
+    lambdas <- c()
     for (dim in 1:init_B@num_modes) {
       if (dim < (init_B@num_modes/2 + 1)) {
-        init_list[[dim]] <- x_regression(init_list = init_list, Y = Y, X = X,
+        x_reg_list <- x_regression(init_list = init_list, Y = Y, X = X,
                                    R = R, idx = dim)
+        init_list[[dim]] <- x_reg_list$B1
+        lambdas <- append(lambdas, x_reg_list$x_lambdas)
       } else {
-        init_list[[dim]] <- y_regression(init_list = init_list, Y = Y, X = X,
-                                         R = R, Ddims= Ddims, idx = dim)
+        y_reg_list <- y_regression(init_list = init_list, Y = Y, X = X,
+                                         R = R, Ddims= Ddims, idx = dim)$B1
+        init_list[[dim]] <- y_reg_list$B3
+        lambdas <- append(lambdas, y_reg_list)
       }
+
     }
    
     # check convergence condition
@@ -289,7 +300,7 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
   }
   
   return(list(B = init_B, factor_mat = init_list, converged = converged,
-              num_iter = num_iter))
+              num_iter = num_iter, lambdas = lambdas))
 }
 
 

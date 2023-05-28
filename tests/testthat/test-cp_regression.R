@@ -4,6 +4,8 @@ test_that("cp_regression_identification", {
   X <- rand_tensor(c(100, 4, 3))
   Y <- rand_tensor(c(100, 4, 3))
   R <- 6
+  obs_dim_X <- 1
+  obs_dim_Y <- 1
   
   # Estimate CP regression
   cp_est <- cp_regression(Y, X, R, 1, 1)
