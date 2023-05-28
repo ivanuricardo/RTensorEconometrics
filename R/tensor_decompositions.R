@@ -56,7 +56,6 @@ cp_modified <- function(tnsr, num_components=NULL,max_iter=25, tol=1e-5,
                         norm_type = "2"){
   if(is.null(num_components)) stop("num_components must be specified")
   stopifnot(is(tnsr,"Tensor"))
-  if (.is_zero_tensor(tnsr)) stop("Zero tensor detected")
   
   #initialization via truncated hosvd
   num_modes <- tnsr@num_modes
