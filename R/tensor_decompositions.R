@@ -2,7 +2,6 @@
 
 #' Reconstruct CP tensor from factor matrices
 #' DEPRECIATED
-#' add new files
 #'
 #' Reconstructs the original CP tensor from its factor matrices, i.e., given the factor matrices
 #' A, B, and C (corresponding to the three modes of the tensor) and a vector of CP decomposition
@@ -23,6 +22,96 @@ reconstruct_cp <- function(A, B, C, D, r, lambda = rep(1, r)) {
     tens <- tens + outer_prod
   }
   return(tens)
+}
+
+#'Canonical Polyadic Decomposition
+#'
+#'Modified version of Canonical Polyadic decomposition. Here, you can
+#'specify the type of norm to take for the lambdas, with Euclidean
+#'norm being the default
+#'@export
+#'@details Uses the Alternating Least Squares (ALS) estimation procedure. A progress bar is included to help monitor operations on large tensors.
+#'@name cp_modified
+#'@rdname cp_modified
+#'@aliases cp_modified
+#'@param tnsr Tensor with K modes
+#'@param num_components the number of rank-1 K-Tensors to use in approximation
+#'@param max_iter maximum number of iterations if error stays above \code{tol} 
+#'@param tol relative Frobenius norm error tolerance
+#'@param norm Type of norm to obtain lambdas. "O" for one norm, "I" 
+#'for infinity norm, "F" for frobenius norm, "M" for maximum modulus, 
+#'"2" for "spectral" or 2-norm
+#'@return a list containing the following \describe{
+#'\item{\code{lambdas}}{a vector of normalizing constants, one for each component}
+#'\item{\code{U}}{a list of matrices - one for each mode - each matrix with \code{num_components} columns}
+#'\item{\code{conv}}{whether or not \code{resid} < \code{tol} by the last iteration}
+#'\item{\code{norm_percent}}{the percent of Frobenius norm explained by the approximation}
+#'\item{\code{est}}{estimate of \code{tnsr} after compression}
+#'\item{\code{fnorm_resid}}{the Frobenius norm of the error \code{fnorm(est-tnsr)}}
+#'\item{\code{all_resids}}{vector containing the Frobenius norm of error for all the iterations}
+#'}
+#'@seealso \code{\link{tucker}}
+#'@references T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
+cp_modified <- function(tnsr, num_components=NULL,max_iter=25, tol=1e-5,
+                        norm_type = "2"){
+  if(is.null(num_components)) stop("num_components must be specified")
+  stopifnot(is(tnsr,"Tensor"))
+  if (.is_zero_tensor(tnsr)) stop("Zero tensor detected")
+  
+  #initialization via truncated hosvd
+  num_modes <- tnsr@num_modes
+  modes <- tnsr@modes
+  U_list <- vector("list",num_modes)
+  unfolded_mat <- vector("list",num_modes)
+  tnsr_norm <- fnorm(tnsr)
+  for(m in 1:num_modes){
+    unfolded_mat[[m]] <- rs_unfold(tnsr,m=m)@data
+    U_list[[m]] <- matrix(rnorm(modes[m]*num_components), nrow=modes[m], ncol=num_components)
+  }
+  est <- tnsr
+  curr_iter <- 1
+  converged <- FALSE
+  #set up convergence check
+  fnorm_resid <- rep(0, max_iter)
+  CHECK_CONV <- function(est){
+    curr_resid <- fnorm(est - tnsr)
+    fnorm_resid[curr_iter] <<- curr_resid
+    if (curr_iter==1) return(FALSE)
+    if (abs(curr_resid-fnorm_resid[curr_iter-1])/tnsr_norm < tol) return(TRUE)
+    else{ return(FALSE)}
+  }	
+  #progress bar
+  pb <- txtProgressBar(min=0,max=max_iter,style=3)
+  #main loop (until convergence or max_iter)
+  norm_vec <- function(vec){
+    norm(as.matrix(vec), type = norm_type)
+  }
+  while((curr_iter < max_iter) && (!converged)){
+    setTxtProgressBar(pb,curr_iter)
+    for(m in 1:num_modes){
+      V <- hadamard_list(lapply(U_list[-m],function(x) {t(x)%*%x}))
+      V_inv <- solve(V)			
+      tmp <- unfolded_mat[[m]]%*%khatri_rao_list(U_list[-m],reverse=TRUE)%*%V_inv
+      lambdas <- apply(tmp,2,norm_vec)
+      U_list[[m]] <- sweep(tmp,2,lambdas,"/")	
+      Z <- .superdiagonal_tensor(num_modes=num_modes,len=num_components,elements=lambdas)
+      est <- ttl(Z,U_list,ms=1:num_modes)
+    }
+    #checks convergence
+    if(CHECK_CONV(est)){
+      converged <- TRUE
+      setTxtProgressBar(pb,max_iter)
+    }else{
+      curr_iter <- curr_iter + 1
+    }
+  }
+  if(!converged){setTxtProgressBar(pb,max_iter)}
+  close(pb)
+  #end of main loop
+  #put together return list, and returns
+  fnorm_resid <- fnorm_resid[fnorm_resid!=0]
+  norm_percent<- (1-(tail(fnorm_resid,1)/tnsr_norm))*100
+  invisible(list(lambdas=lambdas, U=U_list, conv=converged, est=est, norm_percent=norm_percent, fnorm_resid = tail(fnorm_resid,1),all_resids=fnorm_resid))
 }
 
 #' Select the rank of a tensor using CP decomposition

@@ -5,7 +5,7 @@ test_that("data_aligns", {
   library(dplyr)
   
   ###### Constructing Data
-  pathname <- "/Users/Ivan/Desktop/Projects/RESEARCH/THESIS/TensorEconometrics/data/GVARDatabase(1979Q2-2019Q4)/CountryData(1979Q2-2019Q4).xls"
+  pathname <- "/home/ivan/Desktop/Projects/Research/TensorEconometrics/data-raw/GVARDatabase(1979Q2-2019Q4)/CountryData.xls"
   sheet_names <- excel_sheets(pathname)
   data <- read_excel(pathname, sheet = 1)
   gvar_data <- data %>% 

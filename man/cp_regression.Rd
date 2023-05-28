@@ -33,12 +33,12 @@ cp_regression(
 \item{seed}{The random seed for reproducibility.}
 }
 \value{
-A list containing the estimated tensor B, factor matrices, convergence
-status, and the number of iterations.
+A list containing the estimated tensor B, factor matrices, 
+convergence status, and the number of iterations.
 }
 \description{
-This function performs CP regression to estimate the tensor B given the input
-tensor Y and covariate tensor X.
+This function performs CP regression to estimate the tensor B given
+the input tensor Y and covariate tensor X.
 }
 \examples{
 Y <- # input tensor

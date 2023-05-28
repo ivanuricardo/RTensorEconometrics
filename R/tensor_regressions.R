@@ -115,6 +115,7 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
 x_regression <- function(init_list, Y, X, R, idx) {
   X_reg <- matrix(nrow = prod(Y@modes), ncol = 0)
   
+  x_lambdas <- c()
   for (r in 1:R) {
     reduced_CP_list <- init_list[-idx]
     factor_column <- lapply(reduced_CP_list, function(m) m[, r])
@@ -123,12 +124,13 @@ x_regression <- function(init_list, Y, X, R, idx) {
               alongB = 1)
     unfolded_Cr <- unfold(Cr, c(1, 3, 4), 2)
     X_reg <- cbind(X_reg, unfolded_Cr@data)
+    
   }
   
   vec_B1 <- solve(crossprod(X_reg)) %*% (crossprod(X_reg, vec(Y)))
   B1 <- matrix(vec_B1, ncol = R)
   
-  return(B1)
+  return(list(B1 = B1, x_lambdas = x_lambdas))
 }
 
 #' Regression associated with Y
