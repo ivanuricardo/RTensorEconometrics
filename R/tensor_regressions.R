@@ -279,7 +279,7 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         lambdas <- append(lambdas, x_reg_list$x_lambdas)
       } else {
         y_reg_list <- y_regression(init_list = init_list, Y = Y, X = X,
-                                         R = R, Ddims= Ddims, idx = dim)$B1
+                                         R = R, Ddims= Ddims, idx = dim)
         init_list[[dim]] <- y_reg_list$B3
         lambdas <- append(lambdas, y_reg_list)
       }
