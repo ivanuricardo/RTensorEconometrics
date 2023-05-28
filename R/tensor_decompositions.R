@@ -100,7 +100,6 @@ cp_modified <- function(tnsr, num_components=NULL,max_iter=25, tol=1e-5,
       curr_iter <- curr_iter + 1
     }
   }
-  close(pb)
   #end of main loop
   #put together return list, and returns
   fnorm_resid <- fnorm_resid[fnorm_resid!=0]
