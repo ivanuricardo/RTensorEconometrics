@@ -79,14 +79,11 @@ cp_modified <- function(tnsr, num_components=NULL,max_iter=25, tol=1e-5,
     if (abs(curr_resid-fnorm_resid[curr_iter-1])/tnsr_norm < tol) return(TRUE)
     else{ return(FALSE)}
   }	
-  #progress bar
-  pb <- txtProgressBar(min=0,max=max_iter,style=3)
   #main loop (until convergence or max_iter)
   norm_vec <- function(vec){
     norm(as.matrix(vec), type = norm_type)
   }
   while((curr_iter < max_iter) && (!converged)){
-    setTxtProgressBar(pb,curr_iter)
     for(m in 1:num_modes){
       V <- hadamard_list(lapply(U_list[-m],function(x) {t(x)%*%x}))
       V_inv <- solve(V)			
@@ -99,12 +96,10 @@ cp_modified <- function(tnsr, num_components=NULL,max_iter=25, tol=1e-5,
     #checks convergence
     if(CHECK_CONV(est)){
       converged <- TRUE
-      setTxtProgressBar(pb,max_iter)
     }else{
       curr_iter <- curr_iter + 1
     }
   }
-  if(!converged){setTxtProgressBar(pb,max_iter)}
   close(pb)
   #end of main loop
   #put together return list, and returns
@@ -231,4 +226,19 @@ cp_uniqueness <- function(cp_object) {
   necessary_cond <- min(prod_rank) >= R
   
   return(list(suff_cond=suff_cond, necessary_cond=necessary_cond))
+}
+
+###Invisible Functions (undocumented)
+#Wrapper to Inverse FFT
+.ifft <- function(x){suppressWarnings(as.numeric(fft(x,inverse=TRUE))/length(x))}
+#Creates a superdiagonal tensor
+.superdiagonal_tensor <- function(num_modes,len,elements=1L){
+  modes <- rep(len,num_modes)
+  arr <- array(0, dim = modes)
+  if(length(elements)==1) elements <- rep(elements,len)
+  for (i in 1:len){
+    txt <- paste("arr[",paste(rep("i", num_modes),collapse=","),"] <- ", elements[i],sep="")
+    eval(parse(text=txt))
+  }
+  as.tensor(arr)
 }
