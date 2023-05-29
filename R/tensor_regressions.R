@@ -136,7 +136,7 @@ x_regression <- function(init_list, Y, X, R, idx) {
   sorted_idx <- order(x_lambdas, decreasing = TRUE)
   B1_permuted <- B1_norm[, sorted_idx]
   
-  return(list(B1 = B1_permuted, x_lambdas = x_lambdas))
+  return(list(B1 = B1_permuted, x_lambdas = x_lambdas[sorted_idx]))
 }
 
 #' Regression associated with Y
@@ -186,7 +186,7 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   sorted_idx <- order(y_lambdas, decreasing = TRUE)
   B3_permuted <- B3_norm[, sorted_idx]
   
-  return(list(B3 = B3_permuted, y_lambdas = y_lambdas))
+  return(list(B3 = B3_permuted, y_lambdas = y_lambdas[sorted_idx]))
 }
 
 convergence_func <- function(pre_init_list, init_list, dim, convThresh) {
@@ -254,8 +254,8 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         init_list[[dim]] <- x_reg_list$B1
         lambdas <- x_reg_list$x_lambdas
         if (convergence_func(pre_init_list, init_list, dim, convThresh)) {
-          break
           converged <- TRUE
+          break
         }
       } else {
         y_reg_list <- y_regression(init_list = init_list, Y = Y, X = X,
@@ -264,13 +264,11 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         init_list[[dim]] <- y_reg_list$B3
         lambdas <- y_reg_list$y_lambdas
         if (convergence_func(pre_init_list, init_list, dim, convThresh)) {
-          break
           converged <- TRUE
+          break
         }
       }
-
     }
-   
     if (converged) {
       break  # Exit the loop if converged
     }

@@ -11,7 +11,7 @@ test_that("cp_regression_identification", {
   cp_est <- cp_regression(Y, X, R, 1, 1)
   
   # Ensure length and ordering identification is met
-  # First, lengths of vectors are one in line with Lock 2018
+  # First, lengths of vectors are one in line with Kolda and Bader 2008
   norm_vec <- c()
   for (r in 1:R) {
     factor_columns <- lapply(cp_est$factor_mat, function(n) n[,r])
@@ -20,11 +20,7 @@ test_that("cp_regression_identification", {
   }
   expect_equal(norm_vec, rep(1, 24))
   
-  # Next, ensure ordering is in line with Lock 2018
-  u1 <- norm_vec[1:6]
-  u2 <- norm_vec[7:12]
-  v1 <- norm_vec[13:18]
-  v2 <- norm_vec[19:24]
+  # Next, ensure ordering is in line Kolda and Bader 2008
   
-  expect_true(all(diff(u1) <= 0))
+  expect_true(all(diff(cp_est$lambdas) <= 0))
 })
