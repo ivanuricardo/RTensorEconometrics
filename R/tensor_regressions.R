@@ -115,7 +115,6 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
 x_regression <- function(init_list, Y, X, R, idx) {
   X_reg <- matrix(nrow = prod(Y@modes), ncol = 0)
   
-  norm_cols <- function(mat) norm(mat, type = "2")
   for (r in 1:R) {
     reduced_CP_list <- init_list[-idx]
     factor_column <- lapply(reduced_CP_list, function(m) m[, r])
@@ -128,10 +127,16 @@ x_regression <- function(init_list, Y, X, R, idx) {
   
   vec_B1 <- solve(crossprod(X_reg)) %*% (crossprod(X_reg, vec(Y)))
   B1 <- matrix(vec_B1, ncol = R)
-  x_lambdas <- apply(B1, 2, norm_cols)
+  
+  # Extract lambdas according to euclidean normalization
+  x_lambdas <- apply(B1, 2, function(x) sqrt(sum(x^2)))
   B1_norm <- sweep(B1, 2, x_lambdas, "/")
   
-  return(list(B1 = B1_norm, x_lambdas = x_lambdas))
+  # Sort matrix in decreasing order
+  sorted_idx <- order(x_lambdas, decreasing = TRUE)
+  B1_permuted <- B1_norm[, sorted_idx]
+  
+  return(list(B1 = B1_permuted, x_lambdas = x_lambdas))
 }
 
 #' Regression associated with Y
@@ -172,49 +177,22 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   
   # Compute the estimate for B^(3) through OLS
   B3 <- t(solve(crossprod(D1)) %*% t(D1) %*% Y_unfolded)
+  
+  # Extract lambdas to normalize via Euclidean norm
   y_lambdas <- apply(B3, 2, norm_cols)
   B3_norm <- sweep(B3, 2, y_lambdas, "/")
   
-  return(list(B3 = B3_norm, y_lambdas = y_lambdas))
+  # Permute the matrix via norms
+  sorted_idx <- order(y_lambdas, decreasing = TRUE)
+  B3_permuted <- B3_norm[, sorted_idx]
+  
+  return(list(B3 = B3_permuted, y_lambdas = y_lambdas))
 }
 
-#' Check convergence condition for CP regression
-#'
-#' This function checks the convergence condition for the CP regression algorithm.
-#' It compares the Frobenius norm of the difference between the initial tensor and
-#' the reconstructed tensor with the convergence threshold. If the difference is
-#' below the threshold, the algorithm is considered converged.
-#'
-#' @param init_list The initial list of CP decomposition factors.
-#' @param R The rank of the CP decomposition.
-#' @param init_B The initial tensor B used in the CP regression.
-#' @param list_SSE A list storing the sum of squared errors (SSE) at each iteration.
-#' @param num_iter The current iteration number.
-#'
-#' @return A list containing the updated initial tensor B, convergence status, and
-#' updated list of SSE values.
-#'
-#' @seealso
-#' \code{\link{y_regression}}, \code{\link{x_regression}} 
-#' \code{\link{cp_regression}}
-#'
-#' @export
-conv_cond <- function(init_list, R, init_B, list_SSE, num_iter, 
-                      convThresh) {
-  reconstructed_list <- reconstruct_cp(init_list[[1]], init_list[[2]],
-                                       init_list[[3]], init_list[[4]], R)
-  fnorm_list <- fnorm(as.tensor(init_B@data - reconstructed_list))
-  list_SSE[num_iter + 1] <- fnorm_list
-  
-  if (abs(list_SSE[num_iter + 1] - list_SSE[num_iter]) < convThresh) {
-    converged <- TRUE
-  } else {
-    converged <- FALSE
-  }
-  
-  init_B <- as.tensor(reconstructed_list)
-  
-  return(list(init_B = init_B, converged = converged, list_SSE = list_SSE))
+convergence_func <- function(pre_init_list, init_list, dim, convThresh) {
+  fnorm_conv <- norm(pre_init_list[[dim]] - init_list[[dim]])
+  if(fnorm_conv < convThresh) return(TRUE)
+  return(FALSE)
 }
 
 #' Perform CP regression
@@ -264,36 +242,35 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
   
   converged <- FALSE
   num_iter <- 0
-  list_SSE <- c(1e05)
-  
-  while (!(converged) && num_iter < max_iter) {
+  while (num_iter < max_iter) {
     num_iter <- num_iter + 1
     Ddims <- c(Y@modes[1] * Y@modes[3], Y@modes[1] * Y@modes[2])
     
-    lambdas <- c()
     for (dim in 1:init_B@num_modes) {
       if (dim < (init_B@num_modes/2 + 1)) {
         x_reg_list <- x_regression(init_list = init_list, Y = Y, X = X,
                                    R = R, idx = dim)
+        pre_init_list <- init_list
         init_list[[dim]] <- x_reg_list$B1
-        lambdas <- append(lambdas, x_reg_list$x_lambdas)
+        lambdas <- x_reg_list$x_lambdas
+        if (convergence_func(pre_init_list, init_list, dim, convThresh)) {
+          break
+          converged <- TRUE
+        }
       } else {
         y_reg_list <- y_regression(init_list = init_list, Y = Y, X = X,
                                          R = R, Ddims= Ddims, idx = dim)
+        pre_init_list <- init_list
         init_list[[dim]] <- y_reg_list$B3
-        lambdas <- append(lambdas, y_reg_list)
+        lambdas <- y_reg_list$y_lambdas
+        if (convergence_func(pre_init_list, init_list, dim, convThresh)) {
+          break
+          converged <- TRUE
+        }
       }
 
     }
    
-    # check convergence condition
-    converge_cond <- conv_cond(init_list = init_list, R = R, init_B = init_B,
-                               list_SSE = list_SSE, num_iter = num_iter,
-                               convThresh = convThresh)
-    init_B <- converge_cond$init_B
-    converged <- converge_cond$converged
-    list_SSE <- converge_cond$list_SSE
-    
     if (converged) {
       break  # Exit the loop if converged
     }
