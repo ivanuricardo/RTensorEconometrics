@@ -7,6 +7,7 @@ X <- rand_tensor(c(100, 4, 3))
 obs_dim_Y <- 1
 obs_dim_X <- 1
 R <- 6
+g <- 7
 
 cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05, 
                           max_iter = 500, seed = 0) {
