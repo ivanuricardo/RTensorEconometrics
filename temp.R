@@ -114,5 +114,3 @@ cp_reg_B <- cp_regression2(Y, X, 12, 1, 1, seed = 20230518)
 
 HOOLS_B@data - cp_reg_B$B
 HOOLS_B@data - rrr_B$B
-
-add <- 5
