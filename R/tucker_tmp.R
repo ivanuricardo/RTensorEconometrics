@@ -35,8 +35,10 @@ yt_regression <- function (X, Y, init_list, idx) {
   return(t(V))
 }
 
-tuck_conv <- function() {
-  
+tuck_conv <- function(pre_init_list, init_list, idx, convThresh) {
+  fnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]])
+  if(fnorm_conv < convThresh) return(TRUE)
+  return(FALSE)
 }
 
 tucker_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05, 
@@ -73,6 +75,7 @@ tucker_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         y_results <- yt_regression(init_list = init_list, Y = Y, X = X,
                                          idx = idx)
         pre_init_list <- init_list
+        init_list[[idx+1]] <- y_results
         if (tuck_conv(pre_init_list, init_list, idx, convThresh)) {
           converged <- TRUE
           break
