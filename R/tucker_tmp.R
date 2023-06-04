@@ -82,5 +82,8 @@ tucker_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         }
       }
     }
+  if (converged) break  # Exit the loop if converged
   }
+  
+  return(list(init_list, ))
 }

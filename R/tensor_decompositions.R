@@ -227,6 +227,27 @@ cp_uniqueness <- function(cp_object) {
   return(list(suff_cond=suff_cond, necessary_cond=necessary_cond))
 }
 
+#' Rebuilds a Tucker tensor from a list of component matrices and core tensor
+#'
+#' This function takes a list of component matrices and rebuilds a Tucker tensor
+#' by iteratively applying the ttm function.
+#'
+#' @param comp_list A list with the core tensor first then component matrices.
+#'
+#' @return The rebuilt Tucker tensor
+#'
+#' @export
+tucker_rebuild <- function(comp_list) {
+  num_factor_matrices <- length(comp_list) - 1
+  rebuilt_tensor <- comp_list[[1]]
+  
+  for (fac in 2:length(comp_list)) {
+    rebuilt_tensor <- ttm(rebuilt_tensor, comp_list[[fac]], fac - 1)
+  }
+  
+  return(rebuilt_tensor)
+}
+
 ###Invisible Functions (undocumented)
 #Wrapper to Inverse FFT
 .ifft <- function(x){suppressWarnings(as.numeric(fft(x,inverse=TRUE))/length(x))}
@@ -241,3 +262,4 @@ cp_uniqueness <- function(cp_object) {
   }
   as.tensor(arr)
 }
+
