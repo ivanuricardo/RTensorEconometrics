@@ -3,8 +3,8 @@ Type: Package
 Title: Tensor Methods for Econometrics
 Version: 1.0.1
 Date: 2023-04-18
-Author: Ivan Ricardo
-Maintainer: Ivan Ricardo
+Authors@R: person("Ivan", "Ricardo", email = "iu.ricardo@maastrichtuniversity.nl",
+  role = c("aut", "cre"))
 Description: Extension to the rTensor package. Includes ttt, tucker rebuild, and others
 License: What license is it under?
 URL: https://github.com/ivanuricardo/TensorEconometrics
