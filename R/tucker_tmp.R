@@ -1,13 +1,3 @@
-
-set.seed(20230603)
-X <- rand_tensor(c(100, 10, 8))
-Y <- rand_tensor(c(100, 10, 8))
-R <- c(5,4,3,2)
-obs_dim_X <- 1
-obs_dim_Y <- 1
-convThresh <- 1e-04
-max_iter <- 400
-
 # Tucker Regression
 xt_regression <- function (X, Y, init_list, idx) {
   omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[(4-idx)]], (3-idx)), 
@@ -84,5 +74,5 @@ tucker_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
   if (converged) break  # Exit the loop if converged
   }
   
-  return(list(init_list, ))
+  return(list(components=init_list, rebuilt_tnsr=tucker_rebuild(init_list)))
 }
