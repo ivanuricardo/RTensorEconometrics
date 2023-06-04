@@ -4,8 +4,8 @@ Title: Tensor Methods for Econometrics
 Version: 1.0.1
 Date: 2023-04-18
 Author: Ivan Ricardo
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
+Maintainer: Ivan Ricardo
+Description: Extension to the rTensor package. Includes ttt, tucker rebuild, and others
 License: What license is it under?
 URL: https://github.com/ivanuricardo/TensorEconometrics
 BugReports: https://github.com/ivanuricardo/TensorEconometrics/issues
@@ -16,5 +16,5 @@ RoxygenNote: 7.2.3
 Depends: 
     R (>= 2.10),
     rTensor 
-LazyData: true
+LazyData: false
 Imports: rTensor, abind

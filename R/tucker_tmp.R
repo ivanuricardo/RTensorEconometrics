@@ -1,4 +1,3 @@
-library(TensorEconometrics)
 
 set.seed(20230603)
 X <- rand_tensor(c(100, 10, 8))
