@@ -189,8 +189,8 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   return(list(B3 = B3_permuted, y_lambdas = y_lambdas[sorted_idx]))
 }
 
-convergence_func <- function(pre_init_list, init_list, dim, convThresh) {
-  fnorm_conv <- norm(pre_init_list[[dim]] - init_list[[dim]])
+convergence_func <- function(pre_init_list, init_list, idx, convThresh) {
+  fnorm_conv <- norm(pre_init_list[[idx]] - init_list[[idx]])
   if(fnorm_conv < convThresh) return(TRUE)
   return(FALSE)
 }
@@ -246,24 +246,24 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
     num_iter <- num_iter + 1
     Ddims <- c(Y@modes[1] * Y@modes[3], Y@modes[1] * Y@modes[2])
     
-    for (dim in 1:init_B@num_modes) {
-      if (dim < (init_B@num_modes/2 + 1)) {
+    for (idx in 1:init_B@num_modes) {
+      if (idx < (init_B@num_modes/2 + 1)) {
         x_reg_list <- x_regression(init_list = init_list, Y = Y, X = X,
-                                   R = R, idx = dim)
+                                   R = R, idx = idx)
         pre_init_list <- init_list
-        init_list[[dim]] <- x_reg_list$B1
+        init_list[[idx]] <- x_reg_list$B1
         lambdas <- x_reg_list$x_lambdas
-        if (convergence_func(pre_init_list, init_list, dim, convThresh)) {
+        if (convergence_func(pre_init_list, init_list, idx, convThresh)) {
           converged <- TRUE
           break
         }
       } else {
         y_reg_list <- y_regression(init_list = init_list, Y = Y, X = X,
-                                         R = R, Ddims= Ddims, idx = dim)
+                                         R = R, Ddims= Ddims, idx = idx)
         pre_init_list <- init_list
-        init_list[[dim]] <- y_reg_list$B3
+        init_list[[idx]] <- y_reg_list$B3
         lambdas <- y_reg_list$y_lambdas
-        if (convergence_func(pre_init_list, init_list, dim, convThresh)) {
+        if (convergence_func(pre_init_list, init_list, idx, convThresh)) {
           converged <- TRUE
           break
         }
