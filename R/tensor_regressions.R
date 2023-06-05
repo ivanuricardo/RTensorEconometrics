@@ -304,6 +304,16 @@ yt_regression <- function (X, Y, init_list, idx) {
   return(t(V))
 }
 
+core_regression <- function(X, Y, init_list) {
+  Xstar <- ttm(ttm(X, init_list[[2]], 2), init_list[[3]], 3)
+  Ystar <- ttm(ttm(Y, init_list[[4]], 2), init_list[[5]], 3)
+  unfolded_Xstar <- unfold(Xstar, row_idx = 1, col_idx = c(2,3))@data
+  unfolded_Ystar <- unfold(Ystar, row_idx = 1, col_idx = c(2,3))@data
+  G <- solve(crossprod(unfolded_Xstar)) %*% 
+    crossprod(unfolded_Xstar, unfolded_Ystar)
+  return(G)
+}
+
 tuck_conv <- function(pre_init_list, init_list, idx, convThresh) {
   fnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]])
   if(fnorm_conv < convThresh) return(TRUE)
@@ -371,7 +381,14 @@ tucker_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         }
       }
     }
-  if (converged) break  # Exit the loop if converged
+    core_update <- core_regression(X = X, Y = Y, init_list = init_list)
+    pre_init_list <- init_list
+    init_list[[1]] <- core_update
+    
+    fnorm_core <- fnorm(pre_init_list[[1]] - init_list[[1]])
+    if (fnorm < convThresh) converged <- TRUE
+    
+    if (converged) break  # Exit the loop if converged
   }
   
   return(list(components=init_list, rebuilt_tnsr=tucker_rebuild(init_list)))
