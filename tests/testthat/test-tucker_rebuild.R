@@ -19,5 +19,18 @@ test_that("Tucker Rebuilds", {
   expect_equal(rebuilt_tensor@modes, original_tensor@modes)
   expect_equal(rebuilt_tensor@data, original_tensor@data, tolerance = 1)
   
+  #### HIGHER SD
   
+  original_tensor2 <- rnorm_tnsr(c(6,5,4,3), sd = 10, drop = FALSE)
+  
+  tucker_tensor2 <- tucker(original_tensor2, R)
+  
+  tucker_list2 <- list(tucker_tensor2$Z, tucker_tensor2$U[[1]],
+                      tucker_tensor2$U[[2]], tucker_tensor2$U[[3]], 
+                      tucker_tensor2$U[[4]])
+  rebuilt_tensor2 <- tucker_rebuild(tucker_list2)
+  
+  expect_equal(rebuilt_tensor2@num_modes, original_tensor2@num_modes)
+  expect_equal(rebuilt_tensor2@modes, original_tensor2@modes)
+  expect_equal(rebuilt_tensor2@data, original_tensor2@data, tolerance = 1)
 })

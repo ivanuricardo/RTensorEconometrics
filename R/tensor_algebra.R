@@ -144,6 +144,6 @@ spark <- function(Phi) {
 #' @return A random tensor with the specified dimensions.
 #'
 #' @export
-rnorm_tnsr <- function(modes = c(3,4,5), sd = 1, drop = drop) {
+rnorm_tnsr <- function(modes = c(3,4,5), sd = 1, drop = FALSE) {
   as.tensor(array(rnorm(prod(modes), sd = sd), dim = modes), drop = drop)
 }
