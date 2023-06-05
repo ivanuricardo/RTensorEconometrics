@@ -18,4 +18,6 @@ test_that("Tucker Rebuilds", {
   expect_equal(rebuilt_tensor@num_modes, original_tensor@num_modes)
   expect_equal(rebuilt_tensor@modes, original_tensor@modes)
   expect_equal(rebuilt_tensor@data, original_tensor@data, tolerance = 1)
+  
+  
 })

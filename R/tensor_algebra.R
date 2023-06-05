@@ -132,3 +132,18 @@ spark <- function(Phi) {
   return(list(K = R + 1, columns = 1:N))
 }
 
+#' Random tensor with standard deviation
+#'
+#' This function generates a random tensor with specified modes and an option
+#' for setting the standard deviation.
+#'
+#' @param modes A vector specifying the dimensions of the tensor.
+#' @param sd The standard deviation used to generate random values.
+#' @param drop Whether or not modes equal to 1 should be dropped.
+#'
+#' @return A random tensor with the specified dimensions.
+#'
+#' @export
+rnorm_tnsr <- function(modes = c(3,4,5), sd = 1, drop = drop) {
+  as.tensor(array(rnorm(prod(modes), sd = sd), dim = modes), drop = drop)
+}
