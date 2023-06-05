@@ -1,20 +1,25 @@
-Package: TensorEconometrics
 Type: Package
+Package: TensorEconometrics
 Title: Tensor Methods for Econometrics
 Version: 1.0.1
 Date: 2023-04-18
-Authors@R: person("Ivan", "Ricardo", email = "iu.ricardo@maastrichtuniversity.nl",
-  role = c("aut", "cre"))
-Description: Extension to the rTensor package. Includes ttt, tucker rebuild, and others
+Authors@R: 
+    person("Ivan", "Ricardo", , "iu.ricardo@maastrichtuniversity.nl", role = c("aut", "cre"))
+Description: Extension to the rTensor package. Includes ttt, tucker
+    rebuild, and others
 License: What license is it under?
 URL: https://github.com/ivanuricardo/TensorEconometrics
 BugReports: https://github.com/ivanuricardo/TensorEconometrics/issues
+Depends: 
+    R (>= 2.10),
+    rTensor
+Imports: 
+    abind,
+    MASS,
+    rTensor
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
-RoxygenNote: 7.2.3
-Depends: 
-    R (>= 2.10),
-    rTensor 
+Encoding: UTF-8
 LazyData: false
-Imports: rTensor, abind
+RoxygenNote: 7.2.3
