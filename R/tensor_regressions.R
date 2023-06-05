@@ -305,8 +305,9 @@ yt_regression <- function (X, Y, init_list, idx) {
 }
 
 core_regression <- function(X, Y, init_list) {
-  Xstar <- ttm(ttm(X, init_list[[2]], 2), init_list[[3]], 3)
-  Ystar <- ttm(ttm(Y, init_list[[4]], 2), init_list[[5]], 3)
+  Xstar <- ttm(ttm(X, t(init_list[[2]]), 2), t(init_list[[3]]), 3)
+  Ystar <- ttm(ttm(Y, MASS::ginv(init_list[[4]]), 2),
+               MASS::ginv(init_list[[5]]), 3)
   unfolded_Xstar <- unfold(Xstar, row_idx = 1, col_idx = c(2,3))@data
   unfolded_Ystar <- unfold(Ystar, row_idx = 1, col_idx = c(2,3))@data
   G <- solve(crossprod(unfolded_Xstar)) %*% 
@@ -381,12 +382,13 @@ tucker_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         }
       }
     }
-    core_update <- core_regression(X = X, Y = Y, init_list = init_list)
+    flattened_core_update <- core_regression(X = X, Y = Y, init_list = init_list)
     pre_init_list <- init_list
+    core_update <- as.tensor(array(flattened_core_update, dim = R))
     init_list[[1]] <- core_update
     
     fnorm_core <- fnorm(pre_init_list[[1]] - init_list[[1]])
-    if (fnorm < convThresh) converged <- TRUE
+    if (fnorm_core < convThresh) converged <- TRUE
     
     if (converged) break  # Exit the loop if converged
   }
