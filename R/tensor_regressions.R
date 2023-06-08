@@ -341,12 +341,12 @@ tuck_conv <- function(pre_init_list, init_list, idx, convThresh) {
 #' @return A list containing the decomposed components and the rebuilt tensor.
 #'
 #' @export
-tucker_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05, 
+tucker_regression <- function(Y, X, R, convThresh = 1e-05, 
                               max_iter = 400, seed = 0) {
   if (seed > 0) set.seed(seed)
   
   # Generate initial random tensor and random CP decomposition
-  init_B <- rand_tensor(c(X@modes[-obs_dim_X], Y@modes[-obs_dim_Y]))
+  init_B <- rand_tensor(c(X@modes[-1], Y@modes[-1]))
   # This is a list of a core tensor plus factor matrices
   init_list <- list(
       rand_tensor(R),
