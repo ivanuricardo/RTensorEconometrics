@@ -384,6 +384,6 @@ tucker_regression <- function(X, Y, R, convThresh=1e-04, max_iter=400,
     
     if (converged) break  # Exit the loop if converged
   }
-  return(list(components=init_list, rebuilt_tnsr=tucker_rebuild(init_list)),
-         num_iter=num_iter, converged=converged)
+  return(list(components=init_list, rebuilt_tnsr=tucker_rebuild(init_list),
+         num_iter=num_iter, converged=converged))
 }
