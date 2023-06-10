@@ -279,7 +279,6 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
 }
 
 # Tucker Regression
-
 xt_regression <- function(X, Y, init_list, idx) {
   omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1), 
                             init_list[[3]], 2), init_list[[8-idx]], 7-idx)
