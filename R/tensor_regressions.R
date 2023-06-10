@@ -279,7 +279,7 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
 }
 
 # Tucker Regression
-xt_regression <- function(X, Y, init_list, idx) {
+xt_regression <- function(X, Y, init_list, idx, R) {
   omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1), 
                             init_list[[3]], 2), init_list[[8-idx]], 7-idx)
   O <- ttt(omitted_tensor, X, alongA = 7-idx, alongB = 5-idx)
@@ -289,7 +289,7 @@ xt_regression <- function(X, Y, init_list, idx) {
   return(t(matrix(vecU, nrow = R[idx])))
 }
 
-yt_regression <- function(X, Y, init_list, idx) {
+yt_regression <- function(X, Y, init_list, idx, R) {
   omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[4-idx]], (3-idx)), 
                             init_list[[4]], 3), init_list[[5]], 4)
   H <- ttt(omitted_tensor, X, alongA = c(3,4), alongB = c(1,2))
@@ -355,7 +355,7 @@ tucker_regression <- function(X, Y, R, convThresh=1e-04, max_iter=400,
     for (idx in init_B@num_modes) {
       if (idx < (init_B@num_modes/2 + 1)) {
         y_results <- yt_regression(init_list = init_list, Y = Y, X = X,
-                                         idx = idx)
+                                         idx = idx, R = R)
         pre_init_list <- init_list
         init_list[[idx+1]] <- y_results
         if (tuck_conv(pre_init_list=pre_init_list, init_list=init_list,
@@ -365,7 +365,7 @@ tucker_regression <- function(X, Y, R, convThresh=1e-04, max_iter=400,
         }
       } else {
         x_results <- xt_regression(init_list = init_list, Y = Y, X = X,
-                                   idx = idx)
+                                   idx = idx, R = R)
         pre_init_list <- init_list
         init_list[[idx+1]] <- x_results
         if (tuck_conv(pre_init_list=pre_init_list, init_list=init_list,
