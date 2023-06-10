@@ -299,7 +299,7 @@ yt_regression <- function(X, Y, init_list, idx, R) {
   return(U)
 }
 
-core_regression <- function(X, Y, init_list, idx) {
+core_regression <- function(X, Y, init_list, idx, R) {
   Xstar <- ttm(ttm(X, t(init_list[[4]]), 1), t(init_list[[5]]), 2)
   Ystar <- ttm(ttm(Y, MASS::ginv(init_list[[2]]), 1),
                MASS::ginv(init_list[[3]]), 2)
@@ -375,7 +375,7 @@ tucker_regression <- function(X, Y, R, convThresh=1e-04, max_iter=400,
         }
       }
     }
-    core_update <- core_regression(X = X, Y = Y, init_list = init_list)
+    core_update <- core_regression(X = X, Y = Y, init_list = init_list, R = R)
     pre_init_list <- init_list
     init_list[[1]] <- core_update
     
