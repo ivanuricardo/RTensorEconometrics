@@ -4,7 +4,7 @@
 \alias{rnorm_tnsr}
 \title{Random tensor with standard deviation}
 \usage{
-rnorm_tnsr(modes = c(3, 4, 5), sd = 1, drop = drop)
+rnorm_tnsr(modes = c(3, 4, 5), sd = 1, drop = FALSE)
 }
 \arguments{
 \item{modes}{A vector specifying the dimensions of the tensor.}
