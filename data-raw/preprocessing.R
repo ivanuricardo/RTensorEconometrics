@@ -8,7 +8,7 @@ library(rTensor)
 set.seed(20230502)
 
 ###### Constructing Data
-pathname <- "data/GVARDatabase(1979Q2-2019Q4)/CountryData(1979Q2-2019Q4).xls"
+pathname <- "~/Desktop/Projects/RESEARCH/THESIS/TensorEconometrics/data-raw/GVARDatabase(1979Q2-2019Q4)/CountryData(1979Q2-2019Q4).xls"
 sheet_names <- excel_sheets(pathname)
 data <- read_excel(pathname, sheet = 1)
 gvar_data <- data %>% 
