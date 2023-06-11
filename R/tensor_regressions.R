@@ -310,11 +310,13 @@ core_regression <- function(X, Y, init_list, idx, R) {
   return(G)
 }
 
-tuck_conv <- function(X, Y,pre_init_list, init_list, idx, convThresh) {
-  fnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]], type = "F")
-  if(fnorm_conv < convThresh) return(TRUE)
-  return(FALSE)
+init_est <- function(X, Y, R) {
+  hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = 3, obs_dim_X = 3)
+  hosvd_est <- hosvd(hools_est, ranks = R)
+  return(list(hosvd_est$Z, hosvd_est$U[[1]], hosvd_est$U[[2]], hosvd_est$U[[3]],
+              hosvd_est$U[[4]]))
 }
+
 
 #' Perform Tucker regression
 #'
@@ -336,16 +338,8 @@ tucker_regression <- function(X, Y, R, convThresh=1e-04, max_iter=400,
                               seed=0) {
   if (seed > 0) set.seed(seed)
   
-  # Generate initial random tensor and random CP decomposition
-  init_B <- rand_tensor(c(X@modes[-3], Y@modes[-3]))
-  # This is a list of a core tensor plus factor matrices
-  init_list <- list(
-      rand_tensor(R),
-      matrix(rnorm(X@modes[1] * R[1]), nrow = X@modes[1]),
-      matrix(rnorm(X@modes[2] * R[2]), nrow = X@modes[2]),
-      matrix(rnorm(Y@modes[1] * R[3]), nrow = Y@modes[1]),
-      matrix(rnorm(Y@modes[2] * R[4]), nrow = Y@modes[2])
-  )
+  init_list <- init_est(X=X, Y=Y, R=R)
+  init_B <- tucker_rebuild(init_list)
   
   converged <- FALSE
   num_iter <- 0
