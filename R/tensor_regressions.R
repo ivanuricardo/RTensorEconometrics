@@ -311,7 +311,7 @@ core_regression <- function(X, Y, init_list, idx, R) {
 }
 
 tuck_conv <- function(X, Y,pre_init_list, init_list, idx, convThresh) {
-  fnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]])
+  fnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]], type = "F")
   if(fnorm_conv < convThresh) return(TRUE)
   return(FALSE)
 }
@@ -352,14 +352,15 @@ tucker_regression <- function(X, Y, R, convThresh=1e-04, max_iter=400,
   while (num_iter < max_iter) {
     num_iter <- num_iter + 1
     
-    for (idx in init_B@num_modes) {
+    for (idx in 1:init_B@num_modes) {
       if (idx < (init_B@num_modes/2 + 1)) {
         y_results <- yt_regression(init_list = init_list, Y = Y, X = X,
                                          idx = idx, R = R)
         pre_init_list <- init_list
         init_list[[idx+1]] <- y_results
-        if (tuck_conv(pre_init_list=pre_init_list, init_list=init_list,
-                      idx=idx, convThresh=convThresh)) {
+        yfnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]],
+                           type = "F")
+        if (yfnorm_conv < convThresh) {
           converged <- TRUE
           break
         }
@@ -368,8 +369,9 @@ tucker_regression <- function(X, Y, R, convThresh=1e-04, max_iter=400,
                                    idx = idx, R = R)
         pre_init_list <- init_list
         init_list[[idx+1]] <- x_results
-        if (tuck_conv(pre_init_list=pre_init_list, init_list=init_list,
-                      idx=idx, convThresh=convThresh)) {
+        xfnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]],
+                           type = "F")
+        if (xfnorm_conv < convThresh) {
           converged <- TRUE
           break
         }
