@@ -137,7 +137,7 @@ cp_rank_selection <- function(tnsr, max_rank) {
   
   for (i in 1:max_rank) {
     # Compute CP decomposition with i components
-    sim_cp <- cp(tnsr, num_components = i)
+    sim_cp <- cp_modified(tnsr, num_components = i)
     fnorm_fit[i] <- sim_cp$fnorm_resid
   }
   
