@@ -189,10 +189,11 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   return(list(B3 = B3_permuted, y_lambdas = y_lambdas[sorted_idx]))
 }
 
-convergence_func <- function(pre_init_list, init_list, idx, convThresh) {
-  fnorm_conv <- norm(pre_init_list[[idx]] - init_list[[idx]])
-  if(fnorm_conv < convThresh) return(TRUE)
-  return(FALSE)
+init_cp <- function(X, Y, R) {
+  hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = 3, obs_dim_X = 3)
+  cp_est <- cp(hools_est, num_components = R)
+  return(list(cp_est$U[[1]], cp_est$U[[2]], cp_est$U[[3]],
+              cp_est$U[[4]]))
 }
 
 #' Perform CP regression
@@ -231,14 +232,9 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
                           max_iter = 500, seed = 0) {
   if (seed > 0) set.seed(seed)
   
-  # Generate initial random tensor and random CP decomposition
-  init_B <- rand_tensor(c(X@modes[-obs_dim_X], Y@modes[-obs_dim_Y]))
-  init_list <- list(
-    matrix(rnorm(X@modes[2] * R), nrow = X@modes[2]),
-    matrix(rnorm(X@modes[3] * R), nrow = X@modes[3]),
-    matrix(rnorm(Y@modes[2] * R), nrow = Y@modes[2]),
-    matrix(rnorm(Y@modes[3] * R), nrow = Y@modes[3])
-  )
+  init_list <- init_cp(X=X, Y=Y, R=R)
+  init_B <- reconstruct_cp(init_list[[1]], init_list[[2]], init_list[[3]],
+                           init_list[[4]], r = R)
   
   converged <- FALSE
   num_iter <- 0
@@ -253,7 +249,8 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         pre_init_list <- init_list
         init_list[[idx]] <- x_reg_list$B1
         lambdas <- x_reg_list$x_lambdas
-        if (convergence_func(pre_init_list, init_list, idx, convThresh)) {
+        fnorm_conv <- norm(pre_init_list[[idx]] - init_list[[idx]], type = "F")
+        if (fnorm_conv < convThresh) {
           converged <- TRUE
           break
         }
@@ -263,7 +260,8 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         pre_init_list <- init_list
         init_list[[idx]] <- y_reg_list$B3
         lambdas <- y_reg_list$y_lambdas
-        if (convergence_func(pre_init_list, init_list, idx, convThresh)) {
+        fnorm_conv <- norm(pre_init_list[[idx]] - init_list[[idx]], type = "F")
+        if (fnorm_conv < convThresh) {
           converged <- TRUE
           break
         }
