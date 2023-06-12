@@ -234,8 +234,8 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
   
   init_list <- init_cp(X=X, Y=Y, R=R, obs_dim_X = obs_dim_X,
                        obs_dim_Y = obs_dim_Y)
-  init_B <- reconstruct_cp(init_list[[1]], init_list[[2]], init_list[[3]],
-                           init_list[[4]], r = R)
+  init_B <- as.tensor(reconstruct_cp(init_list[[1]], init_list[[2]], init_list[[3]],
+                           init_list[[4]], r = R))
   
   converged <- FALSE
   num_iter <- 0
