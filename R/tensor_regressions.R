@@ -189,8 +189,8 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   return(list(B3 = B3_permuted, y_lambdas = y_lambdas[sorted_idx]))
 }
 
-init_cp <- function(X, Y, R) {
-  hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = 3, obs_dim_X = 3)
+init_cp <- function(X, Y, R, obs_dim_X, obs_dim_Y) {
+  hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = obs_dim_Y, obs_dim_X = obs_dim_X)
   cp_est <- cp(hools_est, num_components = R)
   return(list(cp_est$U[[1]], cp_est$U[[2]], cp_est$U[[3]],
               cp_est$U[[4]]))
@@ -232,7 +232,8 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
                           max_iter = 500, seed = 0) {
   if (seed > 0) set.seed(seed)
   
-  init_list <- init_cp(X=X, Y=Y, R=R)
+  init_list <- init_cp(X=X, Y=Y, R=R, obs_dim_X = obs_dim_X,
+                       obs_dim_Y = obs_dim_Y)
   init_B <- reconstruct_cp(init_list[[1]], init_list[[2]], init_list[[3]],
                            init_list[[4]], r = R)
   
