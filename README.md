@@ -33,3 +33,8 @@ Below you will find the structure of package, including extensions to tensor dec
 - **HOOLS**: Finds the OLS solution for a predictor and response tensor
 - **cp_regression**: Finds the OLS solution for a predictor and response tensor with a CP decomposition of the parameters. 
 - **tucker_regression**: Finds the OLS solution for a predictor and response tensor with a Tucker decomposition of the parameters.
+
+## Data
+
+- **traditional_data**: Flattened GVAR data
+- **tensor_data**: GVAR data in array format
