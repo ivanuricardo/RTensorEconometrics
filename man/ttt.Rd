@@ -25,8 +25,8 @@ A new tensor resulting from the tensor product of A and B along the
 Compute the tensor product of two tensors along specified modes.
 }
 \examples{
-A <- array(1:24, dim = c(3, 4, 2))
-B <- array(1:24, dim = c(2, 3, 4))
+A <- rnorm_tnsr(c(4,5,6))
+B <- rnorm_tnsr(c(6,8,9))
 ttt(A, B, alongA = 3, alongB = 1)
 
 }

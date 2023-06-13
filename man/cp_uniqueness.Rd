@@ -25,8 +25,7 @@ condition checks if the minimum product of ranks of each factor matrix is
 greater than or equal to the rank of the tensor.
 }
 \examples{
-library(rTensor)
-X <- rand_tensor(c(4,5,6))
+X <- rnorm_tnsr(c(4,5,6))
 fit <- cp(X, 3)
 cp_uniqueness(fit)
 

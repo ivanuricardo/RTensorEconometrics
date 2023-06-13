@@ -63,7 +63,7 @@ matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
 #' 
 #' @examples
 #' # Generate random tensor data
-#' library(rTensor)
+#' library(TensorEconometrics)
 #' Y <- rand_tensor(c(100, 3,4))
 #' X <- rand_tensor(c(100, 3,2))
 #' 
@@ -78,19 +78,13 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
   if (!inherits(Y, "Tensor") || !inherits(X, "Tensor")) {
     stop("Y and X must be tensors")
   }
+  full_modes <- c(Y@modes[-obs_dim_Y], X@modes[-obs_dim_X])
+  flat_Y <- unfold(Y, obs_dim_Y, setdiff(1:3,obs_dim_X))@data
+  flat_X <- unfold(X, obs_dim_X, setdiff(1:3,obs_dim_Y))@data
   
-  # Compute numerator and denominator tensors
-  numerator <- ttt(X, Y, obs_dim_Y, obs_dim_X)
-  denominator <- ttt(X, X, obs_dim_X, obs_dim_X)
+  flat_OLS <- solve(crossprod(flat_X)) %*% crossprod(flat_X, flat_Y)
   
-  # Invert the denominator tensor
-  inverted_den <- tensor_inverse(denominator)
-  
-  # Compute HOOLS estimator
-  number_dims <- length(dim(numerator))
-  ols_hat <- ttt(inverted_den, numerator, (number_dims/2 + 1):number_dims, 1:(number_dims/2))
-  
-  return(ols_hat)
+  return(as.tensor(array(flat_OLS, dim = full_modes)))
 }
 
 #' Regression associated with X

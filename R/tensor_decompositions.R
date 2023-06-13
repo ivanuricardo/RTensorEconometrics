@@ -1,7 +1,6 @@
 ##### Functions
 
 #' Reconstruct CP tensor from factor matrices
-#' DEPRECIATED
 #'
 #' Reconstructs the original CP tensor from its factor matrices, i.e., given the factor matrices
 #' A, B, and C (corresponding to the three modes of the tensor) and a vector of CP decomposition
@@ -11,6 +10,7 @@
 #' @param A factor matrix of mode 1
 #' @param B factor matrix of mode 2
 #' @param C factor matrix of mode 3
+#' @param D factor matrix of mode 4
 #' @param r rank of the CP decomposition
 #' @param lambda vector of CP decomposition coefficients, defaults to vector of 1's
 #' @return Reconstructed CP tensor
@@ -203,8 +203,7 @@ tucker_rank_selection <- function(tnsr, c = log(tnsr@modes[1])/(10*tnsr@modes[1]
 #' greater than or equal to the rank of the tensor.
 #'
 #' @examples
-#' library(rTensor)
-#' X <- rand_tensor(c(4,5,6))
+#' X <- rnorm_tnsr(c(4,5,6))
 #' fit <- cp(X, 3)
 #' cp_uniqueness(fit)
 #'

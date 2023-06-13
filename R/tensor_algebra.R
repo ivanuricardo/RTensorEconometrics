@@ -13,8 +13,8 @@
 #'   specified modes.
 #'
 #' @examples
-#' A <- array(1:24, dim = c(3, 4, 2))
-#' B <- array(1:24, dim = c(2, 3, 4))
+#' A <- rnorm_tnsr(c(4,5,6))
+#' B <- rnorm_tnsr(c(6,8,9))
 #' ttt(A, B, alongA = 3, alongB = 1)
 #' 
 #' @export
@@ -54,34 +54,6 @@ ttt <- function(A, B, alongA = NA, alongB = NA) {
 ttv <- function(A, V, N) {
   if (is.array(A) || is.vector(A)) A <- as.tensor(A)
   return(ttt(A, as.tensor(V), N, 1))
-}
-
-
-#' Invert a tensor
-#'
-#' Given a tensor A, this function returns the inverse of A, where the inverse is
-#' defined as the inverse of the matricization of A along the first half of its
-#' dimensions. 
-#'
-#' @param A a tensor to be inverted
-#' @return the inverse of A
-#' @examples
-#' A <- array(1:8, dim = c(2, 2, 2))
-#' tensor_inverse(A) # returns the inverse of A
-tensor_inverse <- function(A) {
-  if (is.array(A) || is.vector(A)) A <- as.tensor(A)
-  if (A@num_modes %% 2 == 1) {
-    stop("Dimensions must be of even length")
-  }
-  if(A@num_modes == 2) {
-    return(solve(A@data))
-  }
-  fin_nrows <- prod(A@modes[1:(length(A@modes)/2)])
-  matricized_A <- unfold(A, row_idx = 1:(A@num_modes/2),
-                         col_idx = (A@num_modes/2 + 1):A@num_modes)
-  inverse_A <- solve(matricized_A@data)
-  reshaped_A <- array(inverse_A, dim = A@modes)
-  return(as.tensor(reshaped_A))
 }
 
 #' Calculate the Spark of a Given Matrix

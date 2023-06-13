@@ -29,7 +29,7 @@ are tensors of HOOLS estimators.
 }
 \examples{
 # Generate random tensor data
-library(rTensor)
+library(TensorEconometrics)
 Y <- rand_tensor(c(100, 3,4))
 X <- rand_tensor(c(100, 3,2))
 
