@@ -30,6 +30,7 @@ a list containing the following \describe{
 \item{\code{lambdas}}{a vector of normalizing constants, one for each component}
 \item{\code{U}}{a list of matrices - one for each mode - each matrix with \code{num_components} columns}
 \item{\code{conv}}{whether or not \code{resid} < \code{tol} by the last iteration}
+\item{\code{norm_type}}{Change norm type for calculating lambdas.}
 \item{\code{norm_percent}}{the percent of Frobenius norm explained by the approximation}
 \item{\code{est}}{estimate of \code{tnsr} after compression}
 \item{\code{fnorm_resid}}{the Frobenius norm of the error \code{fnorm(est-tnsr)}}

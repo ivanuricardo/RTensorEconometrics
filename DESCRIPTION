@@ -6,7 +6,7 @@ Date: 2023-04-18
 Authors@R: 
     person("Ivan", "Ricardo", , "iu.ricardo@maastrichtuniversity.nl", role = c("aut", "cre"))
 Description: Extension to the rTensor package. Includes ttt, tucker
-    rebuild, and others
+    rebuild, and others.
 License: What license is it under?
 URL: https://github.com/ivanuricardo/TensorEconometrics
 BugReports: https://github.com/ivanuricardo/TensorEconometrics/issues
@@ -16,7 +16,8 @@ Depends:
 Imports: 
     abind,
     MASS,
-    rTensor
+    rTensor,
+    stats
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

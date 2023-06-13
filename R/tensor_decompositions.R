@@ -45,11 +45,13 @@ reconstruct_cp <- function(A, B, C, D, r, lambda = rep(1, r)) {
 #'\item{\code{lambdas}}{a vector of normalizing constants, one for each component}
 #'\item{\code{U}}{a list of matrices - one for each mode - each matrix with \code{num_components} columns}
 #'\item{\code{conv}}{whether or not \code{resid} < \code{tol} by the last iteration}
+#'\item{\code{norm_type}}{Change norm type for calculating lambdas.}
 #'\item{\code{norm_percent}}{the percent of Frobenius norm explained by the approximation}
 #'\item{\code{est}}{estimate of \code{tnsr} after compression}
 #'\item{\code{fnorm_resid}}{the Frobenius norm of the error \code{fnorm(est-tnsr)}}
 #'\item{\code{all_resids}}{vector containing the Frobenius norm of error for all the iterations}
 #'}
+#' @importFrom stats rnorm
 #'@seealso \code{\link{tucker}}
 #'@references T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
 cp_modified <- function(tnsr, num_components=NULL,max_iter=25, tol=1e-5,
@@ -65,7 +67,7 @@ cp_modified <- function(tnsr, num_components=NULL,max_iter=25, tol=1e-5,
   tnsr_norm <- fnorm(tnsr)
   for(m in 1:num_modes){
     unfolded_mat[[m]] <- rs_unfold(tnsr,m=m)@data
-    U_list[[m]] <- matrix(rnorm(modes[m]*num_components), nrow=modes[m], ncol=num_components)
+    U_list[[m]] <- matrix(stats::rnorm(modes[m]*num_components), nrow=modes[m], ncol=num_components)
   }
   est <- tnsr
   curr_iter <- 1
@@ -249,7 +251,7 @@ tucker_rebuild <- function(comp_list) {
 
 ###Invisible Functions (undocumented)
 #Wrapper to Inverse FFT
-.ifft <- function(x){suppressWarnings(as.numeric(fft(x,inverse=TRUE))/length(x))}
+.ifft <- function(x){suppressWarnings(as.numeric(stats::fft(x,inverse=TRUE))/length(x))}
 #Creates a superdiagonal tensor
 .superdiagonal_tensor <- function(num_modes,len,elements=1L){
   modes <- rep(len,num_modes)

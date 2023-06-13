@@ -33,12 +33,12 @@ matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
   row_col_prod <- num_rows*num_cols
   
   # Generate random normal variables for the initial values
-  init_vals <- matrix(rnorm(row_col_prod), nrow = 1)
+  init_vals <- matrix(stats::rnorm(row_col_prod), nrow = 1)
   
   # Simulate the VAR process
   sim_data <- matrix(0, nrow = obs, ncol = row_col_prod)
   for (i in 2:obs) {
-    sim_data[i,] <- parameter_matrix %*% sim_data[i-1,] + rnorm(6)
+    sim_data[i,] <- parameter_matrix %*% sim_data[i-1,] + stats::rnorm(6)
   }
   sim_data[1, ] <- init_vals
   sim_mat <- array(sim_data, dim = c(obs,3,2))
@@ -435,6 +435,7 @@ tuck_conv2 <- function(pre_init_list, init_list, idx, convThresh) {
 #' @param seed An optional seed for reproducible results.
 #'
 #' @return A list containing the decomposed components and the rebuilt tensor.
+#' @importFrom stats rnorm
 #'
 #' @export
 tucker_regression2 <- function(Y, X, R, convThresh = 1e-05, 
@@ -446,10 +447,10 @@ tucker_regression2 <- function(Y, X, R, convThresh = 1e-05,
   # This is a list of a core tensor plus factor matrices
   init_list <- list(
       rand_tensor(R),
-      matrix(rnorm(X@modes[2] * R[1]), nrow = X@modes[2]),
-      matrix(rnorm(X@modes[3] * R[2]), nrow = X@modes[3]),
-      matrix(rnorm(Y@modes[2] * R[3]), nrow = Y@modes[2]),
-      matrix(rnorm(Y@modes[3] * R[4]), nrow = Y@modes[3])
+      matrix(stats::rnorm(X@modes[2] * R[1]), nrow = X@modes[2]),
+      matrix(stats::rnorm(X@modes[3] * R[2]), nrow = X@modes[3]),
+      matrix(stats::rnorm(Y@modes[2] * R[3]), nrow = Y@modes[2]),
+      matrix(stats::rnorm(Y@modes[3] * R[4]), nrow = Y@modes[3])
   )
   
   converged <- FALSE
