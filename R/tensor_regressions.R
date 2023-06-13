@@ -125,7 +125,7 @@ x_regression <- function(init_list, Y, X, R, idx) {
     X_reg <- cbind(X_reg, unfolded_Cr@data)
   }
   
-  vec_B1 <- solve(crossprod(X_reg)) %*% (crossprod(X_reg, vec(Y)))
+  vec_B1 <- solve(crossprod(X_reg)) %*% crossprod(X_reg, vec(Y))
   B1 <- matrix(vec_B1, ncol = R)
   
   # Extract lambdas according to euclidean normalization
@@ -162,7 +162,6 @@ x_regression <- function(init_list, Y, X, R, idx) {
 y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   D1 <- matrix(nrow = Ddims[(idx-2)], ncol = 0)
   y_idx <- idx - 1
-  norm_cols <- function(mat) norm(mat, type = "2")
   for (r in 1:R) {
     reduced_CP_list <- init_list[-idx]
     factor_column <- lapply(reduced_CP_list, function(n) n[, r])
@@ -179,7 +178,7 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
   B3 <- t(solve(crossprod(D1)) %*% t(D1) %*% Y_unfolded)
   
   # Extract lambdas to normalize via Euclidean norm
-  y_lambdas <- apply(B3, 2, norm_cols)
+  y_lambdas <- apply(B3, 2, function(x) sqrt(sum(x^2)))
   B3_norm <- sweep(B3, 2, y_lambdas, "/")
   
   # Permute the matrix via norms
@@ -191,7 +190,7 @@ y_regression <- function(init_list, Y, X, R, Ddims, idx) {
 
 init_cp <- function(X, Y, R, obs_dim_X, obs_dim_Y) {
   hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = obs_dim_Y, obs_dim_X = obs_dim_X)
-  cp_est <- cp(hools_est, num_components = R)
+  cp_est <- cp_modified(hools_est, num_components = R)
   return(list(cp_est$U[[1]], cp_est$U[[2]], cp_est$U[[3]],
               cp_est$U[[4]]))
 }
