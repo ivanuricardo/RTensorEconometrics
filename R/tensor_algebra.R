@@ -39,6 +39,24 @@ ttt <- function(A, B, alongA = NA, alongB = NA) {
   as.tensor(array(cmatrix, dim = full_dims))
 }
 
+#' Tensor times Vector
+#' 
+#' Given a tensor and a (column) vector, compute the product. The integer N 
+#' specifies the dimension in A along which V is multiplied.
+#' 
+#' @param A A tensor
+#' @param V A column vector
+#' @param N Dimension over which to multiply
+#' 
+#' @return A contracted tensor
+#' 
+#' @export
+ttv <- function(A, V, N) {
+  if (is.array(A) || is.vector(A)) A <- as.tensor(A)
+  return(ttt(A, as.tensor(V), N, 1))
+}
+
+
 #' Invert a tensor
 #'
 #' Given a tensor A, this function returns the inverse of A, where the inverse is
