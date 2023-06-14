@@ -261,8 +261,8 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
         }
       }
     }
-    init_B <- reconstruct_cp(init_list[[1]], init_list[[2]], init_list[[3]],
-                             init_list[[4]], r = R, lambda = lambdas)
+    init_B <- as.tensor(reconstruct_cp(init_list[[1]], init_list[[2]],init_list[[3]],
+                             init_list[[4]], r = R, lambda = lambdas))
     if (converged) {
       break  # Exit the loop if converged
     }
