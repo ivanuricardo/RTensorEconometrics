@@ -25,3 +25,18 @@ test_that("cp_regression_identification", {
   
   expect_true(all(diff(cp_est$lambdas) <= 0))
 })
+
+test_that("reconstruct_cp same as output B", {
+  set.seed(20230614)
+  X <- rnorm_tnsr(c(100,2,3))
+  Y <- rnorm_tnsr(c(100,2,3))
+  R <- 3
+  obs_dim_X <- 1
+  obs_dim_Y <- 1
+  
+  cp_est <- cp_regression(Y,X,R,obs_dim_X, obs_dim_Y)
+  reconstructed <- reconstruct_cp(cp_est$factor_mat[[1]], cp_est$factor_mat[[2]],
+                                  cp_est$factor_mat[[3]], cp_est$factor_mat[[4]],
+                                  r=R, lambda = cp_est$lambdas)
+  expect_equal(as.tensor(reconstructed), cp_est$B)
+})
