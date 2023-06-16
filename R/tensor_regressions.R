@@ -273,44 +273,63 @@ cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
 }
 
 # Tucker Regression
-xt_regression <- function(X, Y, init_list, idx, R) {
-  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1), 
-                            init_list[[3]], 2), init_list[[8-idx]], 7-idx)
-  O <- ttt(omitted_tensor, X, alongA = 7-idx, alongB = 5-idx)
-  vecY <- vec(Y)
-  matO <- unfold(O, row_idx = c(3,4), col_idx = c(1,2,5))@data
-  vecU <- solve(matO %*% t(matO)) %*% matO %*% vecY
-  return(t(matrix(vecU, nrow = R[idx])))
-}
-
-yt_regression <- function(X, Y, init_list, idx, R) {
-  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[4-idx]], (3-idx)), 
+U1_reg <- function (X, Y, init_list) {
+  # Multiply G x2 U2 x3 U3 x4 U4
+  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[(3)]], (2)), 
                             init_list[[4]], 3), init_list[[5]], 4)
-  H <- ttt(omitted_tensor, X, alongA = c(3,4), alongB = c(1,2))
-  matH <- unfold(H, row_idx = idx, col_idx = setdiff(1:3, idx))
-  matY <- unfold(Y, row_idx = idx, col_idx = setdiff(1:3, idx))
-  U <- matY@data %*% t(matH@data) %*% solve(matH@data %*% t(matH@data))
-  return(U)
+  H <- ttt(X, omitted_tensor, alongA = 3, alongB = 2)
+  unfolded_H <- unfold(H, row_idx = c(2,3), col_idx = c(1,4,5))@data
+  vec_U <- solve(unfolded_H %*% t(unfolded_H)) %*% unfolded_H %*% vec(Y)
+  return(matrix(vec_U, nrow = X@modes[2]))
 }
 
-core_regression <- function(X, Y, init_list, idx, R) {
-  Xstar <- ttm(ttm(X, t(init_list[[4]]), 1), t(init_list[[5]]), 2)
-  Ystar <- ttm(ttm(Y, MASS::ginv(init_list[[2]]), 1),
-               MASS::ginv(init_list[[3]]), 2)
-  matXstar <- unfold(Xstar, row_idx = c(1,2), col_idx = 3)@data
-  matYstar <- unfold(Ystar, row_idx = c(1,2), col_idx = 3)@data
-  flat_G <- matYstar %*% t(matXstar) %*% solve(matXstar %*% t(matXstar))
-  G <- as.tensor(array(flat_G, dim = R))
-  return(G)
+U2_reg <- function (X, Y, init_list) {
+  # Multiply G x2 U2 x3 U3 x4 U4
+  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[(2)]], (1)), 
+                            init_list[[4]], 3), init_list[[5]], 4)
+  H <- ttt(X, omitted_tensor, alongA = 2, alongB = 1)
+  unfolded_H <- unfold(H, row_idx = c(2,3), col_idx = c(1,4,5))@data
+  vec_U <- solve(unfolded_H %*% t(unfolded_H)) %*% unfolded_H %*% vec(Y)
+  return(matrix(vec_U, nrow = X@modes[3]))
 }
 
-init_est <- function(X, Y, R) {
-  hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = 3, obs_dim_X = 3)
+U3_reg <- function (X, Y, init_list) {
+  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1),
+                            init_list[[3]], 2), init_list[[5]], 4)
+  O <- ttt(X, omitted_tensor, alongA = c(2,3), alongB = c(1,2))
+  unfolded_O <- unfold(O, row_idx = 2, col_idx = c(1,3))@data
+  V <- solve(unfolded_O %*% t(unfolded_O)) %*% unfolded_O %*%
+    t(unfold(Y, row_idx = 2, col_idx = c(1,3))@data)
+  return(t(V))
+}
+
+U4_reg <- function (X, Y, init_list) {
+  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1),
+                            init_list[[3]], 2), init_list[[4]], 3)
+  O <- ttt(X, omitted_tensor, alongA = c(2,3), alongB = c(1,2))
+  unfolded_O <- unfold(O, row_idx = 3, col_idx = c(1,2))@data
+  V <- solve(unfolded_O %*% t(unfolded_O)) %*% unfolded_O %*%
+    t(unfold(Y, row_idx = 3, col_idx = c(1,2))@data)
+  return(t(V))
+}
+
+core_regression <- function(X, Y, R, init_list) {
+  Xstar <- ttm(ttm(X, t(init_list[[2]]), 2), t(init_list[[3]]), 3)
+  Ystar <- ttm(ttm(Y, MASS::ginv(init_list[[4]]), 2),
+               MASS::ginv(init_list[[5]]), 3)
+  unfolded_Xstar <- unfold(Xstar, row_idx = 1, col_idx = c(2,3))@data
+  unfolded_Ystar <- unfold(Ystar, row_idx = 1, col_idx = c(2,3))@data
+  G <- solve(crossprod(unfolded_Xstar)) %*% 
+    crossprod(unfolded_Xstar, unfolded_Ystar)
+  return(array(G, dim = R))
+}
+
+init_est <- function(X, Y, R, obs_dim_Y, obs_dim_X) {
+  hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = obs_dim_Y, obs_dim_X = obs_dim_X)
   hosvd_est <- hosvd(hools_est, ranks = R)
   return(list(hosvd_est$Z, hosvd_est$U[[1]], hosvd_est$U[[2]], hosvd_est$U[[3]],
               hosvd_est$U[[4]]))
 }
-
 
 #' Perform Tucker regression
 #'
@@ -328,169 +347,65 @@ init_est <- function(X, Y, R) {
 #' @return A list containing the decomposed components and the rebuilt tensor.
 #'
 #' @export
-tucker_regression <- function(X, Y, R, convThresh=1e-04, max_iter=400,
-                              seed=0) {
+tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
+                              seed = 0) {
   if (seed > 0) set.seed(seed)
   
-  init_list <- init_est(X=X, Y=Y, R=R)
+  # Initialize via HOSVD
+  init_list <- init_est(X = X, Y = Y, R = R, obs_dim_Y = 1, obs_dim_X = 1)
   init_B <- tucker_rebuild(init_list)
   
   converged <- FALSE
   num_iter <- 0
+  
   while (num_iter < max_iter) {
     num_iter <- num_iter + 1
     
-    for (idx in 1:init_B@num_modes) {
-      if (idx < (init_B@num_modes/2 + 1)) {
-        y_results <- yt_regression(init_list = init_list, Y = Y, X = X,
-                                         idx = idx, R = R)
-        pre_init_list <- init_list
-        init_list[[idx+1]] <- y_results
-        yfnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]],
-                           type = "F")
-        if (yfnorm_conv < convThresh) {
-          converged <- TRUE
-          break
-        }
-      } else {
-        x_results <- xt_regression(init_list = init_list, Y = Y, X = X,
-                                   idx = idx, R = R)
-        pre_init_list <- init_list
-        init_list[[idx+1]] <- x_results
-        xfnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]],
-                           type = "F")
-        if (xfnorm_conv < convThresh) {
-          converged <- TRUE
-          break
-        }
-      }
-    }
-    core_update <- core_regression(X = X, Y = Y, init_list = init_list, R = R)
+    # Update U1, U2, U3, U4, and G
+    U1 <- U1_reg(X, Y, init_list = init_list)
     pre_init_list <- init_list
-    init_list[[1]] <- core_update
-    
-    fnorm_core <- fnorm(pre_init_list[[1]] - init_list[[1]])
-    if (fnorm_core < convThresh) converged <- TRUE
-    
-    if (converged) break  # Exit the loop if converged
-  }
-  return(list(components=init_list, rebuilt_tnsr=tucker_rebuild(init_list),
-         num_iter=num_iter, converged=converged))
-}
-
-# Alternate Tucker
-
-xt_regression2 <- function (X, Y, init_list, idx) {
-  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[(4-idx)]], (3-idx)), 
-                            init_list[[4]], 3), init_list[[5]], 4)
-  H <- ttt(X, omitted_tensor, alongA = (4-idx), alongB = (3-idx))
-  unfolded_H <- unfold(H, row_idx = c(2,3), col_idx = c(1,4,5))@data
-  vec_U <- solve(unfolded_H %*% t(unfolded_H)) %*% unfolded_H %*% vec(Y)
-  return(matrix(vec_U, ncol = omitted_tensor@modes[idx]))
-}
-
-yt_regression2 <- function (X, Y, init_list, idx) {
-  # This alternates between solving for U3 then solving for U4
-  # In order for this to work, we then first omit U3 (include U4) then omit
-  # U4 (include U3). Additionally, first multiply over 4 then 3
-  # NOTE: init_list includes the core tensor, so shift idx by one
-  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1),
-                            init_list[[3]], 2), init_list[[(8-idx)]], (7-idx))
-  O <- ttt(X, omitted_tensor, alongA = c(2,3), alongB = c(1,2))
-  unfold_dim <- idx-1
-  unfolded_O <- unfold(O, row_idx = unfold_dim,
-                       col_idx = setdiff(1:3, unfold_dim))@data
-  V <- solve(unfolded_O %*% t(unfolded_O)) %*% unfolded_O %*%
-    t(unfold(Y, row_idx = unfold_dim, col_idx = setdiff(1:3, unfold_dim))@data)
-  return(t(V))
-}
-
-core_regression2 <- function(X, Y, init_list) {
-  Xstar <- ttm(ttm(X, t(init_list[[2]]), 2), t(init_list[[3]]), 3)
-  Ystar <- ttm(ttm(Y, MASS::ginv(init_list[[4]]), 2),
-               MASS::ginv(init_list[[5]]), 3)
-  unfolded_Xstar <- unfold(Xstar, row_idx = 1, col_idx = c(2,3))@data
-  unfolded_Ystar <- unfold(Ystar, row_idx = 1, col_idx = c(2,3))@data
-  G <- solve(crossprod(unfolded_Xstar)) %*% 
-    crossprod(unfolded_Xstar, unfolded_Ystar)
-  return(G)
-}
-
-tuck_conv2 <- function(pre_init_list, init_list, idx, convThresh) {
-  fnorm_conv <- norm(pre_init_list[[idx+1]] - init_list[[idx+1]])
-  if(fnorm_conv < convThresh) return(TRUE)
-  return(FALSE)
-}
-
-#' Alternate Tucker Regression
-#'
-#' This function is similar to the original Tucker Regression, but allows for
-#' observations in the first dimension rather than the last dimension. This is
-#' in line with Brandi et. al 2021.
-#'
-#' @param Y The target tensor.
-#' @param X The predictor tensor.
-#' @param R A vector specifying the desired rank of each mode in the Tucker
-#'   decomposition.
-#' @param convThresh The convergence threshold for the Tucker decomposition.
-#' @param max_iter The maximum number of iterations for convergence.
-#' @param seed An optional seed for reproducible results.
-#'
-#' @return A list containing the decomposed components and the rebuilt tensor.
-#' @importFrom stats rnorm
-#'
-#' @export
-tucker_regression2 <- function(Y, X, R, convThresh = 1e-05, 
-                              max_iter = 400, seed = 0) {
-  if (seed > 0) set.seed(seed)
-  
-  # Generate initial random tensor and random CP decomposition
-  init_B <- rand_tensor(c(X@modes[-1], Y@modes[-1]))
-  # This is a list of a core tensor plus factor matrices
-  init_list <- list(
-      rand_tensor(R),
-      matrix(stats::rnorm(X@modes[2] * R[1]), nrow = X@modes[2]),
-      matrix(stats::rnorm(X@modes[3] * R[2]), nrow = X@modes[3]),
-      matrix(stats::rnorm(Y@modes[2] * R[3]), nrow = Y@modes[2]),
-      matrix(stats::rnorm(Y@modes[3] * R[4]), nrow = Y@modes[3])
-  )
-  
-  converged <- FALSE
-  num_iter <- 0
-  while (num_iter < max_iter) {
-    num_iter <- num_iter + 1
-    
-    for (idx in 1:init_B@num_modes) {
-      if (idx < (init_B@num_modes/2 + 1)) {
-        x_results <- xt_regression2(init_list = init_list, Y = Y, X = X,
-                                   idx = idx)
-        pre_init_list <- init_list
-        init_list[[idx+1]] <- x_results
-        if (tuck_conv2(pre_init_list, init_list, idx, convThresh)) {
-          converged <- TRUE
-          break
-        }
-      } else {
-        y_results <- yt_regression2(init_list = init_list, Y = Y, X = X,
-                                         idx = idx)
-        pre_init_list <- init_list
-        init_list[[idx+1]] <- y_results
-        if (tuck_conv2(pre_init_list, init_list, idx, convThresh)) {
-          converged <- TRUE
-          break
-        }
-      }
+    init_list[[2]] <- U1
+    conv1 <- norm(pre_init_list[[2]] - init_list[[2]], type = "F")
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
     }
-    flattened_core_update <- core_regression2(X = X, Y = Y, init_list = init_list)
+    U2 <- U2_reg(X, Y, init_list = init_list)
     pre_init_list <- init_list
-    core_update <- as.tensor(array(flattened_core_update, dim = R))
-    init_list[[1]] <- core_update
+    init_list[[3]] <- U2
+    conv2 <- norm(pre_init_list[[3]] - init_list[[3]], type = "F")
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
+    }
     
-    fnorm_core <- fnorm(pre_init_list[[1]] - init_list[[1]])
-    if (fnorm_core < convThresh) converged <- TRUE
+    U3 <- U3_reg(X, Y, init_list = init_list)
+    pre_init_list <- init_list
+    init_list[[4]] <- U3
+    conv3 <- norm(pre_init_list[[4]] - init_list[[4]], type = "F")
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
+    }
     
-    if (converged) break  # Exit the loop if converged
+    U4 <- U4_reg(X, Y, init_list = init_list)
+    pre_init_list <- init_list
+    init_list[[5]] <- U4
+    conv4 <- norm(pre_init_list[[5]] - init_list[[5]], type = "F")
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
+    }
+    
+    G <- core_regression(X, Y, R, init_list = init_list)
+    pre_init_list <- init_list
+    init_list[[1]] <- as.tensor(G)
+    conv5 <- fnorm(pre_init_list[[1]] - init_list[[1]])
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
+    }
   }
-  
-  return(list(components=init_list, rebuilt_tnsr=tucker_rebuild(init_list)))
+  return(list(factors = init_list, B = tucker_rebuilt(init_list), 
+              num_iter = num_iter, converged = converged))
 }
