@@ -4,12 +4,12 @@
 \alias{tucker_regression}
 \title{Perform Tucker regression}
 \usage{
-tucker_regression(X, Y, R, convThresh = 1e-04, max_iter = 400, seed = 0)
+tucker_regression(Y, X, R, convThresh = 1e-04, max_iter = 400, seed = 0)
 }
 \arguments{
-\item{X}{The predictor tensor.}
-
 \item{Y}{The target tensor.}
+
+\item{X}{The predictor tensor.}
 
 \item{R}{A vector specifying the desired rank of each mode in the Tucker
 decomposition.}

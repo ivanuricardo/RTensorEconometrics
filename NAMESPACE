@@ -2,5 +2,5 @@ export("reconstruct_cp", "matrix_ols_sim", "ttt",
        "HOOLS", "cp_rank_selection", "tucker_rank_selection", "spark",
        "cp_uniqueness", "x_regression", "y_regression", 
        "cp_regression", "cp_modified", "tucker_rebuild", "tucker_regression",
-       "rnorm_tnsr", "tucker_regression2", "ttv")
+       "rnorm_tnsr", "ttv")
 import(rTensor, abind)
