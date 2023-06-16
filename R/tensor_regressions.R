@@ -406,6 +406,6 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
       break
     }
   }
-  return(list(factors = init_list, B = tucker_rebuilt(init_list), 
+  return(list(factors = init_list, B = tucker_rebuild(init_list), 
               num_iter = num_iter, converged = converged))
 }
