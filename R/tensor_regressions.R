@@ -410,4 +410,3 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
               num_iter = num_iter, converged = converged))
 }
 
-R <- c(2,3,4,5)
