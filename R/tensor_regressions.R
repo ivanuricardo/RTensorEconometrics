@@ -348,15 +348,26 @@ init_est <- function(X, Y, R, obs_dim_Y, obs_dim_X) {
 #'
 #' @export
 tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
-                              seed = 0) {
+                              init_val = 0, seed = 0) {
   if (seed > 0) set.seed(seed)
   
+  if (init_val = 0) {
   # Initialize via HOSVD
   init_list <- init_est(X = X, Y = Y, R = R, obs_dim_Y = 1, obs_dim_X = 1)
   init_B <- tucker_rebuild(init_list)
+  } else {
+    init_list <- init_val
+    init_B <- tucker_rebuild(init_list)
+  }
   
   converged <- FALSE
   num_iter <- 0
+  conv_plot <- c()
+  conv_plot1 <- c()
+  conv_plot2 <- c()
+  conv_plot3 <- c()
+  conv_plot4 <- c()
+  conv_plot5 <- c()
   
   while (num_iter < max_iter) {
     num_iter <- num_iter + 1
@@ -366,47 +377,44 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
     pre_init_list <- init_list
     init_list[[2]] <- U1
     conv1 <- norm(pre_init_list[[2]] - init_list[[2]], type = "F")
-    if (conv1 < convThresh) {
-      converged <- TRUE
-      break
-    }
+    conv_plot1 <- append(conv_plot1, conv1)
+    
     U2 <- U2_reg(X, Y, init_list = init_list)
     pre_init_list <- init_list
     init_list[[3]] <- U2
     conv2 <- norm(pre_init_list[[3]] - init_list[[3]], type = "F")
-    if (conv1 < convThresh) {
-      converged <- TRUE
-      break
-    }
+    conv_plot2 <- append(conv_plot2, conv2)
     
     U3 <- U3_reg(X, Y, init_list = init_list)
     pre_init_list <- init_list
     init_list[[4]] <- U3
     conv3 <- norm(pre_init_list[[4]] - init_list[[4]], type = "F")
-    if (conv1 < convThresh) {
-      converged <- TRUE
-      break
-    }
+    conv_plot3 <- append(conv_plot3, conv3)
     
     U4 <- U4_reg(X, Y, init_list = init_list)
     pre_init_list <- init_list
     init_list[[5]] <- U4
     conv4 <- norm(pre_init_list[[5]] - init_list[[5]], type = "F")
-    if (conv1 < convThresh) {
-      converged <- TRUE
-      break
-    }
+    conv_plot4 <- append(conv_plot4, conv4)
     
     G <- core_regression(X, Y, R, init_list = init_list)
     pre_init_list <- init_list
     init_list[[1]] <- as.tensor(G)
     conv5 <- fnorm(pre_init_list[[1]] - init_list[[1]])
-    if (conv1 < convThresh) {
+    conv_plot5 <- append(conv_plot5, conv5)
+    
+    sum_conv <- sum(conv1, conv2, conv3, conv4, conv5)
+    conv_plot <- append(conv_plot, sum_conv)
+    
+    if (sum_conv < convThresh) {
       converged <- TRUE
       break
     }
   }
+  conv_plots <- cbind(SUM = conv_plot, G = conv_plot5,  U1 = conv_plot1, 
+                      U2 = conv_plot2, U3 = conv_plot3, U4 = conv_plot4)
   return(list(factors = init_list, B = tucker_rebuild(init_list), 
-              num_iter = num_iter, converged = converged))
+              num_iter = num_iter, converged = converged, 
+              conv_plots = conv_plots))
 }
 
