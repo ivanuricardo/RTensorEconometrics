@@ -82,7 +82,7 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
   flat_Y <- unfold(Y, obs_dim_Y, setdiff(1:3,obs_dim_X))@data
   flat_X <- unfold(X, obs_dim_X, setdiff(1:3,obs_dim_Y))@data
   
-  flat_OLS <- solve(crossprod(flat_X)) %*% crossprod(flat_X, flat_Y)
+  flat_OLS <- MASS::ginv(crossprod(flat_X)) %*% crossprod(flat_X, flat_Y)
   
   return(as.tensor(array(flat_OLS, dim = full_modes)))
 }
@@ -348,26 +348,15 @@ init_est <- function(X, Y, R, obs_dim_Y, obs_dim_X) {
 #'
 #' @export
 tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
-                              init_val = 0, seed = 0) {
+                              seed = 0) {
   if (seed > 0) set.seed(seed)
   
-  if (is.numeric(init_val)) {
   # Initialize via HOSVD
   init_list <- init_est(X = X, Y = Y, R = R, obs_dim_Y = 1, obs_dim_X = 1)
   init_B <- tucker_rebuild(init_list)
-  } else {
-    init_list <- init_val
-    init_B <- tucker_rebuild(init_list)
-  }
   
   converged <- FALSE
   num_iter <- 0
-  conv_plot <- c()
-  conv_plot1 <- c()
-  conv_plot2 <- c()
-  conv_plot3 <- c()
-  conv_plot4 <- c()
-  conv_plot5 <- c()
   
   while (num_iter < max_iter) {
     num_iter <- num_iter + 1
@@ -377,44 +366,140 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
     pre_init_list <- init_list
     init_list[[2]] <- U1
     conv1 <- norm(pre_init_list[[2]] - init_list[[2]], type = "F")
-    conv_plot1 <- append(conv_plot1, conv1)
-    
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
+    }
     U2 <- U2_reg(X, Y, init_list = init_list)
     pre_init_list <- init_list
     init_list[[3]] <- U2
     conv2 <- norm(pre_init_list[[3]] - init_list[[3]], type = "F")
-    conv_plot2 <- append(conv_plot2, conv2)
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
+    }
     
     U3 <- U3_reg(X, Y, init_list = init_list)
     pre_init_list <- init_list
     init_list[[4]] <- U3
     conv3 <- norm(pre_init_list[[4]] - init_list[[4]], type = "F")
-    conv_plot3 <- append(conv_plot3, conv3)
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
+    }
     
     U4 <- U4_reg(X, Y, init_list = init_list)
     pre_init_list <- init_list
     init_list[[5]] <- U4
     conv4 <- norm(pre_init_list[[5]] - init_list[[5]], type = "F")
-    conv_plot4 <- append(conv_plot4, conv4)
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
+    }
     
     G <- core_regression(X, Y, R, init_list = init_list)
     pre_init_list <- init_list
     init_list[[1]] <- as.tensor(G)
     conv5 <- fnorm(pre_init_list[[1]] - init_list[[1]])
-    conv_plot5 <- append(conv_plot5, conv5)
-    
-    sum_conv <- sum(conv1, conv2, conv3, conv4, conv5)
-    conv_plot <- append(conv_plot, sum_conv)
-    
-    if (sum_conv < convThresh) {
+    if (conv1 < convThresh) {
       converged <- TRUE
       break
     }
   }
-  conv_plots <- cbind(SUM = conv_plot, G = conv_plot5,  U1 = conv_plot1, 
-                      U2 = conv_plot2, U3 = conv_plot3, U4 = conv_plot4)
   return(list(factors = init_list, B = tucker_rebuild(init_list), 
-              num_iter = num_iter, converged = converged, 
-              conv_plots = conv_plots))
+              num_iter = num_iter, converged = converged))
 }
 
+#' CP Regression for R=1
+#' @export
+cp_regression2 <- function(X, Y, convThresh = 1e-04, max_iter = 400, seed = 0) {
+  if (seed > 0) set.seed(seed)
+  init_list <- init_cp(X=X, Y=Y, R=1, obs_dim_X = 1,
+                       obs_dim_Y = 1)
+  init_B <- as.tensor(reconstruct_cp(init_list[[1]], init_list[[2]], init_list[[3]],
+                                     init_list[[4]], r = 1))
+  
+  converged <- FALSE
+  num_iter <- 0
+  fnorm_plot1 <- c()
+  fnorm_plot2 <- c()
+  fnorm_plot3 <- c()
+  fnorm_plot4 <- c()
+  while (num_iter < max_iter) {
+    num_iter <- num_iter + 1
+    
+    # First Dimension
+    omitted1 <- init_list[[2]][,1] %o% init_list[[3]][,1] %o% init_list[[4]][,1]
+    C1 <- ttt(X, as.tensor(omitted1), alongA = 3, alongB = 1)
+    unfold_C1 <- unfold(C1, row_idx = 2, col_idx = c(1,3,4))
+    vecU1 <- solve(tcrossprod(unfold_C1@data)) %*% unfold_C1@data %*% vec(Y)
+    lambda <- norm(vecU1, type = "2")
+    U1norm <- vecU1 / lambda
+    
+    pre_init_list <- init_list
+    init_list[[1]] <- U1norm
+    fnorm_conv <- norm(pre_init_list[[1]] - init_list[[1]], type = "2")
+    fnorm_plot1 <- append(fnorm_plot1, fnorm_conv)
+    if (fnorm_conv < convThresh) {
+      converged <- TRUE
+      break
+    }
+    
+    # Second Dimension
+    omitted2 <- init_list[[1]][,1] %o% init_list[[3]][,1] %o% init_list[[4]][,1]
+    C2 <- ttt(X, as.tensor(omitted2), alongA = 2, alongB = 1)
+    unfold_C2 <- unfold(C2, row_idx = 2, col_idx = c(1,3,4))
+    vecU2 <- solve(tcrossprod(unfold_C2@data)) %*% unfold_C2@data %*% vec(Y)
+    lambda <- norm(vecU2, type = "2")
+    U2norm <- vecU2 / lambda
+    
+    pre_init_list <- init_list
+    init_list[[2]] <- U2norm
+    fnorm_conv <- norm(pre_init_list[[2]] - init_list[[2]], type = "2")
+    fnorm_plot2 <- append(fnorm_plot2, fnorm_conv)
+    if (fnorm_conv < convThresh) {
+      converged <- TRUE
+      break
+    }
+    
+    # Third Dimension
+    omitted3 <- init_list[[1]][,1] %o% init_list[[2]][,1] %o% init_list[[4]][,1]
+    D1 <- vec(ttt(X, as.tensor(omitted3), alongA = c(2,3), alongB = c(1,2)))
+    U3 <- t(solve(crossprod(D1)) %*% t(D1) %*% 
+      t(unfold(Y, row_idx = 2, col_idx = c(1,3))@data))
+    lambda <- norm(U3, type = "2")
+    U3norm <- U3 / lambda
+    
+    pre_init_list <- init_list
+    init_list[[3]] <- U3norm
+    fnorm_conv <- norm(pre_init_list[[3]] - init_list[[3]], type = "2")
+    fnorm_plot3 <- append(fnorm_plot3, fnorm_conv)
+    if (fnorm_conv < convThresh) {
+      converged <- TRUE
+      break
+    }
+    
+    # Fourth Dimension
+    omitted4 <- init_list[[1]][,1] %o% init_list[[2]][,1] %o% init_list[[3]][,1]
+    D2 <- vec(ttt(X, as.tensor(omitted4), alongA = c(2,3), alongB = c(1,2)))
+    U4 <- t(solve(crossprod(D2)) %*% t(D2) %*% 
+              t(unfold(Y, row_idx = 3, col_idx = c(1,2))@data))
+    lambda <- norm(U4, type = "2")
+    U4norm <- U4 / lambda
+    
+    pre_init_list <- init_list
+    init_list[[4]] <- U4norm
+    fnorm_conv <- norm(pre_init_list[[4]] - init_list[[4]], type = "2")
+    fnorm_plot4 <- append(fnorm_plot4, fnorm_conv)
+    if (fnorm_conv < convThresh) {
+      converged <- TRUE
+      break
+    }
+    
+  }
+  init_B <- lambda*(init_list[[1]][,1] %o% init_list[[2]][,1] %o% init_list[[3]][,1] %o%
+    init_list[[4]][,1])
+  return(list(B = init_B, factor_mat = init_list, converged = converged,
+              num_iter = num_iter, lambdas = lambdas, 
+              fnorm_plots = list(fnorm_plot1, fnorm_plot2, fnorm_plot3, fnorm_plot4)))
+}
