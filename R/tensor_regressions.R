@@ -500,6 +500,6 @@ cp_regression2 <- function(X, Y, convThresh = 1e-04, max_iter = 400, seed = 0) {
   init_B <- lambda*(init_list[[1]][,1] %o% init_list[[2]][,1] %o% init_list[[3]][,1] %o%
     init_list[[4]][,1])
   return(list(B = init_B, factor_mat = init_list, converged = converged,
-              num_iter = num_iter, lambdas = lambdas, 
+              num_iter = num_iter, lambdas = lambda, 
               fnorm_plots = list(fnorm_plot1, fnorm_plot2, fnorm_plot3, fnorm_plot4)))
 }
