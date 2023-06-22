@@ -87,103 +87,111 @@ HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) 
   return(as.tensor(array(flat_OLS, dim = full_modes)))
 }
 
-#' Regression associated with X
-#'
-#' This function computes the regression for the X portion of the CP 
-#' regression. This is part one of a two part scheme for the parameters
-#' of the CP regression. 
-#'
-#' @param init_list The initial list of CP decomposition factors.
-#' @param Y The target tensor.
-#' @param X The input tensor.
-#' @param R The rank of the CP decomposition.
-#' @param idx The index associated with the X regression
-#'
-#' @return The factor matrix associated with the X regression
-#' 
-#' @seealso
-#' \code{\link{y_regression}}, \code{\link{conv_cond}}
-#' \code{\link{cp_regression}}
-#'
-#' @export
-x_regression <- function(init_list, Y, X, R, idx) {
-  X_reg <- matrix(nrow = prod(Y@modes), ncol = 0)
+x1_regression <- function(init_list, X, Y, R) {
+  C <- matrix(nrow = prod(Y@modes), ncol = 0)
+  omitted_lst <- init_list[-1]
   
   for (r in 1:R) {
-    reduced_CP_list <- init_list[-idx]
-    factor_column <- lapply(reduced_CP_list, function(m) m[, r])
-    outer_product <- Reduce(function(x, y) x %o% y, factor_column)
-    Cr <- ttt(X, as.tensor(outer_product), alongA = (Y@num_modes+1-idx),
+    Rvecs <- lapply(omitted_lst, function(m) m[, r])
+    outer_vecs <- Reduce(function(x, y) x %o% y, Rvecs)
+    Cr <- ttt(X, as.tensor(outer_vecs), alongA = 3,
               alongB = 1)
-    unfolded_Cr <- unfold(Cr, c(1, 3, 4), 2)
-    X_reg <- cbind(X_reg, unfolded_Cr@data)
+    unfoldCr <- unfold(Cr, row_idx = 2, col_idx = c(1,3,4))
+    C <- cbind(C, t(unfoldCr@data))
   }
   
-  vec_B1 <- solve(crossprod(X_reg)) %*% crossprod(X_reg, vec(Y))
-  B1 <- matrix(vec_B1, ncol = R)
+  vecB1 <- solve(crossprod(C)) %*% crossprod(C, vec(Y))
+  unperm_B1 <- matrix(vecB1, nrow = X@modes[2], ncol = R)
   
-  # Extract lambdas according to euclidean normalization
-  x_lambdas <- apply(B1, 2, function(x) sqrt(sum(x^2)))
-  B1_norm <- sweep(B1, 2, x_lambdas, "/")
+  # Lambdas
+  lambda1 <- apply(unperm_B1, 2, function(x) sqrt(sum(x^2)))
+  B1_norm <- sweep(unperm_B1, 2, lambda1, "/")
   
   # Sort matrix in decreasing order
-  sorted_idx <- order(x_lambdas, decreasing = TRUE)
+  sorted_idx <- order(lambda1, decreasing = TRUE)
   B1_permuted <- B1_norm[, sorted_idx]
   
-  return(list(B1 = B1_permuted, x_lambdas = x_lambdas[sorted_idx]))
+  return(list(B1 = as.matrix(B1_permuted), lambdas = lambda1))
 }
 
-#' Regression associated with Y
-#'
-#' This function computes the regression for the Y portion of the CP 
-#' regression. This is part two of a two part scheme for the parameters
-#' of the CP regression. 
-#'
-#' @param init_list The initial list of CP decomposition factors.
-#' @param Y The response tensor
-#' @param X The predictor tensor
-#' @param R The CP rank
-#' @param Ddims Vector with dimensions of D
-#' @param idx Index for Y tensor associated with CP regression
-#'
-#' @return The D1 regression factor matrix.
-#'
-#' @seealso
-#' \code{\link{x_regression}}, \code{\link{conv_cond}}
-#' \code{\link{cp_regression}}
-#'
-#' @export
-y_regression <- function(init_list, Y, X, R, Ddims, idx) {
-  D1 <- matrix(nrow = Ddims[(idx-2)], ncol = 0)
-  y_idx <- idx - 1
+x2_regression <- function(init_list, X, Y, R) {
+  omitted_lst <- init_list[-2]
+  C <- matrix(nrow = prod(Y@modes), ncol = 0)
+  
   for (r in 1:R) {
-    reduced_CP_list <- init_list[-idx]
-    factor_column <- lapply(reduced_CP_list, function(n) n[, r])
-    outer_product <- Reduce(function(x, y) x %o% y, factor_column)
-    Dr <- ttt(X, as.tensor(outer_product), alongA = 2:3, alongB = 1:2)
-    D1 <- cbind(D1, vec(Dr))
+    Rvecs <- lapply(omitted_lst, function(m) m[, r])
+    outer_vecs <- Reduce(function(x, y) x %o% y, Rvecs)
+    Cr <- ttt(X, as.tensor(outer_vecs), alongA = 2, alongB = 1)
+    unfoldCr <- unfold(Cr, row_idx = 2, col_idx = c(1,3,4))
+    C <- cbind(C, t(unfoldCr@data))
   }
   
-  # Unfold Y along the dimensions not considered
-  Y_unfolded <- unfold(Y, row_idx = setdiff(1:3, y_idx),
-                       col_idx = y_idx)@data
+  vecB2 <- solve(crossprod(C)) %*% crossprod(C, vec(Y))
+  unperm_B2 <- matrix(vecB2, ncol = R)
   
-  # Compute the estimate for B^(3) through OLS
-  B3 <- t(solve(crossprod(D1)) %*% t(D1) %*% Y_unfolded)
+  # Lambdas
+  lambda2 <- apply(unperm_B2, 2, function(x) sqrt(sum(x^2)))
+  B2_norm <- sweep(unperm_B2, 2, lambda2, "/")
   
-  # Extract lambdas to normalize via Euclidean norm
-  y_lambdas <- apply(B3, 2, function(x) sqrt(sum(x^2)))
-  B3_norm <- sweep(B3, 2, y_lambdas, "/")
+  # Sort Matrices
+  sorted_idx <- order(lambda2, decreasing = TRUE)
+  B2_permuted <- B2_norm[, sorted_idx]
   
-  # Permute the matrix via norms
-  sorted_idx <- order(y_lambdas, decreasing = TRUE)
-  B3_permuted <- B3_norm[, sorted_idx]
+  return(list(B2 = as.matrix(B2_permuted), lambdas = lambda2))
+}
+
+y1_regression <- function(init_list, X, Y, R) {
+  omitted_lst <- init_list[-3]
+  D1 <- matrix(nrow = Y@modes[1]*Y@modes[3], ncol = 0)
   
-  return(list(B3 = B3_permuted, y_lambdas = y_lambdas[sorted_idx]))
+  for (r in 1:R) {
+    Rvecs <- lapply(omitted_lst, function(m) m[, r])
+    outer_vecs <- Reduce(function(x, y) x %o% y, Rvecs)
+    dr <- vec(ttt(X, as.tensor(outer_vecs), alongA = c(2,3), alongB = c(1,2)))
+    D1 <- cbind(D1, dr)
+  }
+  
+  unfoldY <- unfold(Y, row_idx = 2, col_idx = c(1,3))
+  unperm_B3 <- t(solve(crossprod(D1)) %*% crossprod(D1, t(unfoldY@data)))
+  
+  # Lambdas
+  lambda3 <- apply(unperm_B3, 2, function(x) sqrt(sum(x^2)))
+  B3_norm <- sweep(unperm_B3, 2, lambda3, "/")
+  
+  # Sort Matrices
+  sorted_idx <- order(lambda3, decreasing = TRUE)
+  B3_permuted <- as.matrix(B3_norm[, sorted_idx])
+  
+  return(list(B3 = unname(B3_permuted), lambdas = unname(lambda3)))
+}
+
+y2_regression <- function(init_list, X, Y, R) {
+  omitted_lst <- init_list[-4]
+  D2 <- matrix(nrow = Y@modes[1]*Y@modes[2], ncol = 0)
+  
+  for (r in 1:R) {
+    Rvecs <- lapply(omitted_lst, function(m) m[, r])
+    outer_vecs <- Reduce(function(x, y) x %o% y, Rvecs)
+    dr <- vec(ttt(X, as.tensor(outer_vecs), alongA = c(2,3), alongB = c(1,2)))
+    D2 <- cbind(D2, dr)
+  }
+  
+  unfoldY <- unfold(Y, row_idx = 3, col_idx = c(1,2))
+  unperm_B4 <- t(solve(crossprod(D2)) %*% crossprod(D2, t(unfoldY@data)))
+  
+  # Lambdas
+  lambda4 <- apply(unperm_B4, 2, function(x) sqrt(sum(x^2)))
+  B4_norm <- sweep(unperm_B4, 2, lambda4, "/")
+  
+  # Sort Matrices
+  sorted_idx <- order(lambda4, decreasing = TRUE)
+  B4_permuted <- as.matrix(B4_norm[, sorted_idx])
+  
+  return(list(B4 = unname(B4_permuted), lambdas = unname(lambda4)))
 }
 
 init_cp <- function(X, Y, R, obs_dim_X, obs_dim_Y) {
-  hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = obs_dim_Y, obs_dim_X = obs_dim_X)
+  hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = 1, obs_dim_X = 1)
   cp_est <- cp_modified(hools_est, num_components = R)
   return(list(cp_est$U[[1]], cp_est$U[[2]], cp_est$U[[3]],
               cp_est$U[[4]]))
@@ -197,8 +205,6 @@ init_cp <- function(X, Y, R, obs_dim_X, obs_dim_Y) {
 #' @param Y The input tensor.
 #' @param X The covariate tensor.
 #' @param R The rank of the CP decomposition.
-#' @param obs_dim_X The observed dimensions of the covariate tensor X.
-#' @param obs_dim_Y The observed dimensions of the input tensor Y.
 #' @param convThresh The convergence threshold for the CP regression algorithm.
 #' @param max_iter The maximum number of iterations.
 #' @param seed The random seed for reproducibility.
@@ -221,54 +227,61 @@ init_cp <- function(X, Y, R, obs_dim_X, obs_dim_Y) {
 #' \code{\link{conv_cond}}
 #' 
 #' @export
-cp_regression <- function(Y, X, R, obs_dim_X, obs_dim_Y, convThresh = 1e-05,
-                          max_iter = 500, seed = 0) {
-  if (seed > 0) set.seed(seed)
-  
+cp_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
+                          seed = 0) {
   init_list <- init_cp(X=X, Y=Y, R=R, obs_dim_X = obs_dim_X,
                        obs_dim_Y = obs_dim_Y)
-  init_B <- as.tensor(reconstruct_cp(init_list[[1]], init_list[[2]], init_list[[3]],
-                           init_list[[4]], r = R))
   
   converged <- FALSE
   num_iter <- 0
   while (num_iter < max_iter) {
     num_iter <- num_iter + 1
-    Ddims <- c(Y@modes[1] * Y@modes[3], Y@modes[1] * Y@modes[2])
     
-    for (idx in 1:init_B@num_modes) {
-      if (idx < (init_B@num_modes/2 + 1)) {
-        x_reg_list <- x_regression(init_list = init_list, Y = Y, X = X,
-                                   R = R, idx = idx)
-        pre_init_list <- init_list
-        init_list[[idx]] <- x_reg_list$B1
-        lambdas <- x_reg_list$x_lambdas
-        fnorm_conv <- norm(pre_init_list[[idx]] - init_list[[idx]], type = "F")
-        if (fnorm_conv < convThresh) {
-          converged <- TRUE
-          break
-        }
-      } else {
-        y_reg_list <- y_regression(init_list = init_list, Y = Y, X = X,
-                                         R = R, Ddims= Ddims, idx = idx)
-        pre_init_list <- init_list
-        init_list[[idx]] <- y_reg_list$B3
-        lambdas <- y_reg_list$y_lambdas
-        fnorm_conv <- norm(pre_init_list[[idx]] - init_list[[idx]], type = "F")
-        if (fnorm_conv < convThresh) {
-          converged <- TRUE
-          break
-        }
-      }
+    x1_reg <- x1_regression(init_list = init_list, X = X, Y = Y, R = R)
+    pre_init_list <- init_list
+    init_list[[1]] <- x1_reg$B1
+    lambdas <- x1_reg$lambdas
+    conv1 <- norm(pre_init_list[[1]] - init_list[[1]], type = "F")
+    if (conv1 < convThresh) {
+      converged <- TRUE
+      break
     }
-    init_B <- as.tensor(reconstruct_cp(init_list[[1]], init_list[[2]],init_list[[3]],
-                             init_list[[4]], r = R, lambda = lambdas))
-    if (converged) {
-      break  # Exit the loop if converged
+    
+    x2_reg <- x2_regression(init_list = init_list, X = X, Y = Y, R = R)
+    pre_init_list <- init_list
+    init_list[[2]] <- x2_reg$B2
+    lambdas <- x2_reg$lambdas
+    conv2 <- norm(pre_init_list[[2]] - init_list[[2]], type = "F")
+    if (conv2 < convThresh) {
+      converged <- TRUE
+      break
+    }
+    
+    y1_reg <- y1_regression(init_list = init_list, X = X, Y = Y, R = R)
+    pre_init_list <- init_list
+    init_list[[3]] <- y1_reg$B3
+    lambdas <- y1_reg$lambdas
+    conv3 <- norm(pre_init_list[[3]] - init_list[[3]], type = "F")
+    if (conv3 < convThresh) {
+      converged <- TRUE
+      break
+    }
+    
+    y2_reg <- y2_regression(init_list = init_list, X = X, Y = Y, R = R)
+    pre_init_list <- init_list
+    init_list[[4]] <- y2_reg$B4
+    lambdas <- y2_reg$lambdas
+    conv4 <- norm(pre_init_list[[4]] - init_list[[4]], type = "F")
+    if (conv4 < convThresh) {
+      converged <- TRUE
+      break
     }
   }
   
-  return(list(B = init_B, factor_mat = init_list, converged = converged,
+  B <- as.tensor(reconstruct_cp(init_list[[1]], init_list[[2]], init_list[[3]],
+                                init_list[[4]], r = R, lambda = lambdas))
+  
+  return(list(B = B, factor_mat = init_list, converged = converged,
               num_iter = num_iter, lambdas = lambdas))
 }
 
