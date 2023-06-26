@@ -16,7 +16,6 @@ Below you will find the structure of package, including extensions to tensor dec
 ## Tensor Algebra
 
 - **ttt**: An extension to the ''ttt'' function found in the MATLAB tensor toolbox (Kolda and Bader 2006). Replaces the ''ttl'' function given in rTensor.
-- **tensor_inverse**: Finds the inverse of a tensor by flattening it in half. 
 - **Spark**: Calculates the Spark (or k-rank) of a given matrix. 
 - **rnorm_tnsr**: Generates a random normal tensor with set dimensions and standard deviation.
 
