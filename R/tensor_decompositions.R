@@ -181,8 +181,8 @@ tucker_rank_selection <- function(tnsr, c = 0, num_obs) {
     svd_mode <- svd(flattened_tnsr)$d
     
     # Compute the optimal rank for the current mode
-    r_mode <- which.max((svd_mode[1:(tnsr@modes[mode] - 1)] + c) /
-                          (svd_mode[2:(tnsr@modes[mode])] + c))
+    r_mode <- which.max((svd_mode[2:(tnsr@modes[mode])] + c) /
+                          (svd_mode[1:(tnsr@modes[mode] - 1)] + c))
     
     # Store the estimated rank for the current mode
     est_ranks[mode] <- r_mode
