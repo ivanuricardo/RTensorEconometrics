@@ -4,16 +4,7 @@
 \alias{cp_regression}
 \title{Perform CP regression}
 \usage{
-cp_regression(
-  Y,
-  X,
-  R,
-  obs_dim_X,
-  obs_dim_Y,
-  convThresh = 1e-05,
-  max_iter = 500,
-  seed = 0
-)
+cp_regression(Y, X, R, convThresh = 1e-04, max_iter = 400, seed = 0)
 }
 \arguments{
 \item{Y}{The input tensor.}
@@ -21,10 +12,6 @@ cp_regression(
 \item{X}{The covariate tensor.}
 
 \item{R}{The rank of the CP decomposition.}
-
-\item{obs_dim_X}{The observed dimensions of the covariate tensor X.}
-
-\item{obs_dim_Y}{The observed dimensions of the input tensor Y.}
 
 \item{convThresh}{The convergence threshold for the CP regression algorithm.}
 

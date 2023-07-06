@@ -165,10 +165,14 @@ cp_rank_selection <- function(tnsr, max_rank) {
 #' @param tnsr A tensor object
 #' @param c Regularization parameter to avoid division by zero. Default is given in 
 #' Xia, Xu, and Zhu 2015
+#' @param num_obs The number of observations for the parameter tensor
 #' @return A vector with the estimated rank for each mode
 #' @export
-tucker_rank_selection <- function(tnsr, c = log(tnsr@modes[1])/(10*tnsr@modes[1])) {
+tucker_rank_selection <- function(tnsr, c = 0, num_obs) {
   est_ranks <- NULL
+  if (c == 0) {
+    c <- sqrt(tnsr@modes[1]*tnsr@modes[2]*log(num_obs)/(10 * num_obs))
+  }
   for (mode in 1:tnsr@num_modes) {
     # Unfold tensor along the current mode
     flattened_tnsr <- unfold(tnsr, mode, setdiff((1:tnsr@num_modes), mode))@data
