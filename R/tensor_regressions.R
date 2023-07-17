@@ -419,6 +419,7 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
       break
     }
   }
+  mse <- Y - ttt(X, tucker_rebuild(init_list), alongA = 2:3, alongB = 1:2)
   return(list(factors = init_list, B = tucker_rebuild(init_list), 
-              num_iter = num_iter, converged = converged))
+              num_iter = num_iter, converged = converged, mse = mse))
 }
