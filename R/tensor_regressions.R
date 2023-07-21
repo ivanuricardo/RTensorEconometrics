@@ -419,7 +419,12 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
       break
     }
   }
-  mse <- Y - ttt(X, tucker_rebuild(init_list), alongA = 2:3, alongB = 1:2)
-  return(list(factors = init_list, B = tucker_rebuild(init_list), 
+  
+  # HOSVD to make factors orthogonal
+  rebuild_A <- tucker_rebuild(init_list)
+  hosvd_A <- hosvd(rebuild_A)
+  mse <- Y - ttt(X, rebuild_A$est, alongA = 2:3, alongB = 1:2)
+  
+  return(list(G = hosvd_A$Z, U = hosvd_A$U, A = hosvd_A$est, 
               num_iter = num_iter, converged = converged, mse = mse))
 }
