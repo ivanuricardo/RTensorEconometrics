@@ -364,8 +364,6 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
                               seed = 0) {
   if (seed > 0) set.seed(seed)
   
-  # For easier time series interpretations
-  R <- c(R[3:4], R[1:2])
   # Initialize via HOSVD
   init_list <- init_est(X = X, Y = Y, R = R, obs_dim_Y = 1, obs_dim_X = 1)
   init_B <- tucker_rebuild(init_list)
