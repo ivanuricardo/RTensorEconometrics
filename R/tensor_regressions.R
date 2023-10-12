@@ -292,7 +292,7 @@ U1_reg <- function (X, Y, init_list) {
                             init_list[[4]], 3), init_list[[5]], 4)
   H <- ttt(X, omitted_tensor, alongA = 3, alongB = 2)
   unfolded_H <- unfold(H, row_idx = c(2,3), col_idx = c(1,4,5))@data
-  vec_U <- solve(unfolded_H %*% t(unfolded_H)) %*% unfolded_H %*% vec(Y)
+  vec_U <- MASS::ginv(unfolded_H %*% t(unfolded_H)) %*% unfolded_H %*% vec(Y)
   return(matrix(vec_U, nrow = X@modes[2]))
 }
 
@@ -302,7 +302,7 @@ U2_reg <- function (X, Y, init_list) {
                             init_list[[4]], 3), init_list[[5]], 4)
   H <- ttt(X, omitted_tensor, alongA = 2, alongB = 1)
   unfolded_H <- unfold(H, row_idx = c(2,3), col_idx = c(1,4,5))@data
-  vec_U <- solve(unfolded_H %*% t(unfolded_H)) %*% unfolded_H %*% vec(Y)
+  vec_U <- MASS::ginv(unfolded_H %*% t(unfolded_H)) %*% unfolded_H %*% vec(Y)
   return(matrix(vec_U, nrow = X@modes[3]))
 }
 
@@ -311,7 +311,7 @@ U3_reg <- function (X, Y, init_list) {
                             init_list[[3]], 2), init_list[[5]], 4)
   O <- ttt(X, omitted_tensor, alongA = c(2,3), alongB = c(1,2))
   unfolded_O <- unfold(O, row_idx = 2, col_idx = c(1,3))@data
-  V <- solve(unfolded_O %*% t(unfolded_O)) %*% unfolded_O %*%
+  V <- MASS::ginv(unfolded_O %*% t(unfolded_O)) %*% unfolded_O %*%
     t(unfold(Y, row_idx = 2, col_idx = c(1,3))@data)
   return(t(V))
 }
@@ -321,7 +321,7 @@ U4_reg <- function (X, Y, init_list) {
                             init_list[[3]], 2), init_list[[4]], 3)
   O <- ttt(X, omitted_tensor, alongA = c(2,3), alongB = c(1,2))
   unfolded_O <- unfold(O, row_idx = 3, col_idx = c(1,2))@data
-  V <- solve(unfolded_O %*% t(unfolded_O)) %*% unfolded_O %*%
+  V <- MASS::ginv(unfolded_O %*% t(unfolded_O)) %*% unfolded_O %*%
     t(unfold(Y, row_idx = 3, col_idx = c(1,2))@data)
   return(t(V))
 }
@@ -332,7 +332,7 @@ core_regression <- function(X, Y, R, init_list) {
                MASS::ginv(init_list[[5]]), 3)
   unfolded_Xstar <- unfold(Xstar, row_idx = 1, col_idx = c(2,3))@data
   unfolded_Ystar <- unfold(Ystar, row_idx = 1, col_idx = c(2,3))@data
-  G <- solve(crossprod(unfolded_Xstar)) %*% 
+  G <- MASS::ginv(crossprod(unfolded_Xstar)) %*% 
     crossprod(unfolded_Xstar, unfolded_Ystar)
   return(array(G, dim = R))
 }
