@@ -36,12 +36,12 @@ matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
   init_vals <- matrix(stats::rnorm(row_col_prod), nrow = 1)
   
   # Simulate the VAR process
-  sim_data <- matrix(0, nrow = obs, ncol = row_col_prod)
+  sim_data <- matrix(0, nrow = row_col_prod, ncol = obs)
   for (i in 2:obs) {
-    sim_data[i,] <- parameter_matrix %*% sim_data[i-1,] + stats::rnorm(6)
+    sim_data[,i] <- parameter_matrix %*% sim_data[,i-1] + stats::rnorm(6)
   }
-  sim_data[1, ] <- init_vals
-  sim_mat <- array(sim_data, dim = c(obs,3,2))
+  sim_data[,1] <- init_vals
+  sim_mat <- array(sim_data, dim = c(3,2,obs))
   return(list(matrix_data = sim_mat, vector_data = sim_data))
 }
 
@@ -51,8 +51,6 @@ matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
 #' 
 #' @param Y A tensor of response variables.
 #' @param X A tensor of predictor variables.
-#' @param obs_dim_Y An integer indicating the dimension of \code{Y} along which observations are stacked.
-#' @param obs_dim_X An integer indicating the dimension of \code{X} along which observations are stacked.
 #'
 #' @return A tensor of HOOLS estimators.
 #' 
@@ -73,16 +71,16 @@ matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
 #' @importFrom ttt tensor_inverse
 #' @export
 #' @rdname HOOLS
-HOOLS <- function(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X))) {
+HOOLS <- function(Y, X) {
   # Check input types
   if (!inherits(Y, "Tensor") || !inherits(X, "Tensor")) {
     stop("Y and X must be tensors")
   }
-  full_modes <- c(Y@modes[-obs_dim_Y], X@modes[-obs_dim_X])
-  flat_Y <- unfold(Y, obs_dim_Y, setdiff(1:3,obs_dim_X))@data
-  flat_X <- unfold(X, obs_dim_X, setdiff(1:3,obs_dim_Y))@data
+  full_modes <- c(Y@modes[-(Y@num_modes)], X@modes[-(Y@num_modes)])
+  flat_Y <- unfold(Y, setdiff(1:Y@num_modes,Y@num_modes), Y@num_modes)@data
+  flat_X <- unfold(X, setdiff(1:X@num_modes,X@num_modes), X@num_modes)@data
   
-  flat_OLS <- MASS::ginv(crossprod(flat_X)) %*% crossprod(flat_X, flat_Y)
+  flat_OLS <- tcrossprod(flat_Y, flat_X) %*% MASS::ginv(tcrossprod(flat_X)) 
   
   return(as.tensor(array(flat_OLS, dim = full_modes)))
 }
