@@ -353,7 +353,7 @@ init_est <- function(Y, X, R) {
 #' @param max_iter The maximum number of iterations for convergence.
 #' @param seed An optional seed for reproducible results.
 #'
-#' @return A list containing the decomposed components and the rebuilt tensor.
+#' @return A list with: G (core tensor), U[[i]] is a list of factor matrices, est is estimate for full coef, num_iters is number of iterations until convergence, converged is bool (whether or not converged), mse is mean squared error
 #'
 #' @export
 tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
@@ -421,6 +421,6 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
   hosvd_A <- hosvd(rebuild_A, ranks = R)
   mse <- Y - ttt(hosvd_A$est, X, alongA = 3:4, alongB = 1:2)
   
-  return(list(G = hosvd_A$Z, U = hosvd_A$U, A = hosvd_A$est, 
+  return(list(G = hosvd_A$Z, U = hosvd_A$U, est = hosvd_A$est, 
               num_iter = num_iter, converged = converged, mse = mse))
 }
