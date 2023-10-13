@@ -408,7 +408,7 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
     
     G <- core_regression(X, Y, R, init_list = init_list)
     pre_init_list <- init_list
-    init_list[[1]] <- as.tensor(G)
+    init_list[[1]] <- G
     conv5 <- fnorm(pre_init_list[[1]] - init_list[[1]])
     if (conv1 < convThresh) {
       converged <- TRUE
