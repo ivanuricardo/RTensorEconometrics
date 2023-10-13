@@ -21,7 +21,7 @@ decomposition.}
 \item{seed}{An optional seed for reproducible results.}
 }
 \value{
-A list containing the decomposed components and the rebuilt tensor.
+A list with: G (core tensor), U[[i]] is a list of factor matrices, est is estimate for full coef, num_iters is number of iterations until convergence, converged is bool (whether or not converged), mse is mean squared error
 }
 \description{
 This function performs Tucker regression on a given tensor, decomposing it

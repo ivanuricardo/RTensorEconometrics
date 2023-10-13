@@ -4,16 +4,12 @@
 \alias{HOOLS}
 \title{Compute the Higher-Order Ordinary Least Squares (HOOLS) estimator}
 \usage{
-HOOLS(Y, X, obs_dim_Y = length(dim(Y)), obs_dim_X = length(dim(X)))
+HOOLS(Y, X)
 }
 \arguments{
 \item{Y}{A tensor of response variables.}
 
 \item{X}{A tensor of predictor variables.}
-
-\item{obs_dim_Y}{An integer indicating the dimension of \code{Y} along which observations are stacked.}
-
-\item{obs_dim_X}{An integer indicating the dimension of \code{X} along which observations are stacked.}
 }
 \value{
 A tensor of HOOLS estimators.
