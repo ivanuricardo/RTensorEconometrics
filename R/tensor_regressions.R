@@ -76,7 +76,7 @@ HOOLS <- function(Y, X) {
   if (!inherits(Y, "Tensor") || !inherits(X, "Tensor")) {
     stop("Y and X must be tensors")
   }
-  full_modes <- c(Y@modes[-(Y@num_modes)], X@modes[-(Y@num_modes)])
+  full_modes <- c(X@modes[-(X@num_modes)], Y@modes[-(Y@num_modes)])
   flat_Y <- unfold(Y, setdiff(1:Y@num_modes,Y@num_modes), Y@num_modes)@data
   flat_X <- unfold(X, setdiff(1:X@num_modes,X@num_modes), X@num_modes)@data
   
@@ -284,59 +284,57 @@ cp_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
 }
 
 # Tucker Regression
+
 U1_reg <- function (X, Y, init_list) {
-  # Multiply G x2 U2 x3 U3 x4 U4
-  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[(3)]], (2)), 
+  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[3]], 2),
                             init_list[[4]], 3), init_list[[5]], 4)
-  H <- ttt(X, omitted_tensor, alongA = 3, alongB = 2)
-  unfolded_H <- unfold(H, row_idx = c(2,3), col_idx = c(1,4,5))@data
-  vec_U <- MASS::ginv(unfolded_H %*% t(unfolded_H)) %*% unfolded_H %*% vec(Y)
-  return(matrix(vec_U, nrow = X@modes[2]))
+  O <- ttt(omitted_tensor, X, alongA = c(3,4), alongB = c(1,2))
+  unfolded_O <- unfold(O, row_idx = 1, col_idx = c(2,3))@data
+  V <- unfold(Y, row_idx = 1, col_idx = c(2,3))@data %*% t(unfolded_O) %*%
+    MASS::ginv(unfolded_O %*% t(unfolded_O))
+  return(V)
 }
 
 U2_reg <- function (X, Y, init_list) {
-  # Multiply G x2 U2 x3 U3 x4 U4
-  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[(2)]], (1)), 
+  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1),
                             init_list[[4]], 3), init_list[[5]], 4)
-  H <- ttt(X, omitted_tensor, alongA = 2, alongB = 1)
-  unfolded_H <- unfold(H, row_idx = c(2,3), col_idx = c(1,4,5))@data
-  vec_U <- MASS::ginv(unfolded_H %*% t(unfolded_H)) %*% unfolded_H %*% vec(Y)
-  return(matrix(vec_U, nrow = X@modes[3]))
+  O <- ttt(omitted_tensor, X, alongA = c(3,4), alongB = c(1,2))
+  unfolded_O <- unfold(O, row_idx = 2, col_idx = c(1,3))@data
+  V <- unfold(Y, row_idx = 2, col_idx = c(1,3))@data %*% t(unfolded_O) %*%
+    MASS::ginv(unfolded_O %*% t(unfolded_O))
+  return(V)
 }
 
 U3_reg <- function (X, Y, init_list) {
-  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1),
+  # Multiply G x2 U2 x3 U3 x4 U4
+  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1), 
                             init_list[[3]], 2), init_list[[5]], 4)
-  O <- ttt(X, omitted_tensor, alongA = c(2,3), alongB = c(1,2))
-  unfolded_O <- unfold(O, row_idx = 2, col_idx = c(1,3))@data
-  V <- MASS::ginv(unfolded_O %*% t(unfolded_O)) %*% unfolded_O %*%
-    t(unfold(Y, row_idx = 2, col_idx = c(1,3))@data)
-  return(t(V))
+  H <- ttt(omitted_tensor, X, alongA = 4, alongB = 2)
+  unfolded_H <- unfold(H, row_idx = c(3,4), col_idx = c(1,2,5))@data
+  vec_U <- vec(Y) %*% t(unfolded_H) %*% MASS::ginv(unfolded_H %*% t(unfolded_H))
+  return(matrix(vec_U, nrow = X@modes[1]))
 }
 
 U4_reg <- function (X, Y, init_list) {
-  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1),
+  # Multiply G x2 U2 x3 U3 x4 U4
+  omitted_tensor <- ttm(ttm(ttm(init_list[[1]], init_list[[2]], 1), 
                             init_list[[3]], 2), init_list[[4]], 3)
-  O <- ttt(X, omitted_tensor, alongA = c(2,3), alongB = c(1,2))
-  unfolded_O <- unfold(O, row_idx = 3, col_idx = c(1,2))@data
-  V <- MASS::ginv(unfolded_O %*% t(unfolded_O)) %*% unfolded_O %*%
-    t(unfold(Y, row_idx = 3, col_idx = c(1,2))@data)
-  return(t(V))
+  H <- ttt(omitted_tensor, X, alongA = 3, alongB = 1)
+  unfolded_H <- unfold(H, row_idx = c(3,4), col_idx = c(1,2,5))@data
+  vec_U <- vec(Y) %*% t(unfolded_H) %*% MASS::ginv(unfolded_H %*% t(unfolded_H))
+  return(matrix(vec_U, nrow = X@modes[2]))
 }
 
 core_regression <- function(X, Y, R, init_list) {
-  Xstar <- ttm(ttm(X, t(init_list[[2]]), 2), t(init_list[[3]]), 3)
-  Ystar <- ttm(ttm(Y, MASS::ginv(init_list[[4]]), 2),
-               MASS::ginv(init_list[[5]]), 3)
-  unfolded_Xstar <- unfold(Xstar, row_idx = 1, col_idx = c(2,3))@data
-  unfolded_Ystar <- unfold(Ystar, row_idx = 1, col_idx = c(2,3))@data
-  G <- MASS::ginv(crossprod(unfolded_Xstar)) %*% 
-    crossprod(unfolded_Xstar, unfolded_Ystar)
-  return(array(G, dim = R))
+  Xstar <- ttm(ttm(X, t(init_list[[2]]), 1), t(init_list[[3]]), 2)
+  Ystar <- ttm(ttm(Y, MASS::ginv(init_list[[4]]), 1),
+               MASS::ginv(init_list[[5]]), 2)
+  G <- HOOLS(Ystar, Xstar)
+  return(G)
 }
 
-init_est <- function(X, Y, R, obs_dim_Y, obs_dim_X) {
-  hools_est <- HOOLS(X=X, Y=Y, obs_dim_Y = obs_dim_Y, obs_dim_X = obs_dim_X)
+init_est <- function(Y, X, R) {
+  hools_est <- HOOLS(Y, X)
   hosvd_est <- hosvd(hools_est, ranks = R)
   return(list(hosvd_est$Z, hosvd_est$U[[1]], hosvd_est$U[[2]], hosvd_est$U[[3]],
               hosvd_est$U[[4]]))
@@ -363,7 +361,7 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
   if (seed > 0) set.seed(seed)
   
   # Initialize via HOSVD
-  init_list <- init_est(X = X, Y = Y, R = R, obs_dim_Y = 1, obs_dim_X = 1)
+  init_list <- init_est(X = X, Y = Y, R = R)
   init_B <- tucker_rebuild(init_list)
   
   converged <- FALSE
