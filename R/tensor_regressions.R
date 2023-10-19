@@ -76,7 +76,7 @@ HOOLS <- function(Y, X) {
   if (!inherits(Y, "Tensor") || !inherits(X, "Tensor")) {
     stop("Y and X must be tensors")
   }
-  full_modes <- c(X@modes[-(X@num_modes)], Y@modes[-(Y@num_modes)])
+  full_modes <- c(Y@modes[-(Y@num_modes)], X@modes[-(X@num_modes)])
   flat_Y <- unfold(Y, setdiff(1:Y@num_modes,Y@num_modes), Y@num_modes)@data
   flat_X <- unfold(X, setdiff(1:X@num_modes,X@num_modes), X@num_modes)@data
   
