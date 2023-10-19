@@ -45,19 +45,19 @@ matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
   return(list(matrix_data = sim_mat, vector_data = sim_data))
 }
 
-#' Compute the Higher-Order Ordinary Least Squares (HOOLS) estimator
+#' Matrix AutoRegressive Model (MAR)
 #'
-#' The HOOLS estimator is a generalization of the ordinary least squares (OLS) estimator to higher-order tensors.
+#' The MAR estimator is a generalization of the ordinary least squares (OLS) estimator to matrix-valued time series. 
 #' 
 #' @param Y A tensor of response variables.
-#' @param X A tensor of predictor variables.
+#' @param p Number of lags to take
 #'
-#' @return A tensor of HOOLS estimators.
+#' @return A tensor for the MAR estimator
 #' 
-#' @details This function computes the HOOLS estimator for a tensor regression model. The HOOLS estimator is defined
-#' as the solution to the equation X = X_1 B_1 + X_2 B_2 + ... + X_r B_r, where X is a tensor of predictor variables,
-#' X_1, X_2, ..., X_r are subtensors of X obtained by fixing the values of certain indices, and B_1, B_2, ..., B_r
-#' are tensors of HOOLS estimators.
+#' @details This function computes the MAR estimator for a matrix-valued regression model. The MAR estimator is defined
+#' as the solution to the equation X = A_1 X_1 + A_2 X_2 + ... + A_p X_r, where X is a tensor of predictor variables,
+#' X_1, X_2, ..., X_r are subtensors of X obtained by fixing the values of certain indices, and A_1, A_2, ..., A_p
+#' are tensors of MAR estimator.
 #' 
 #' @examples
 #' # Generate random tensor data
@@ -65,20 +65,23 @@ matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
 #' Y <- rand_tensor(c(100, 3,4))
 #' X <- rand_tensor(c(100, 3,2))
 #' 
-#' # Compute HOOLS estimator with observations along the first dimension
-#' HOOLS(Y, X, obs_dim_Y = 1, obs_dim_X = 1)
+#' # Compute MAR estimator with observations along the first dimension
+#' MAR(Y, X, p)
 #'
-#' @importFrom ttt tensor_inverse
 #' @export
-#' @rdname HOOLS
-HOOLS <- function(Y, X) {
+#' @rdname MAR
+MAR <- function(Y, p) {
   # Check input types
   if (!inherits(Y, "Tensor") || !inherits(X, "Tensor")) {
     stop("Y and X must be tensors")
   }
-  full_modes <- c(Y@modes[-(Y@num_modes)], X@modes[-(X@num_modes)])
-  flat_Y <- unfold(Y, setdiff(1:Y@num_modes,Y@num_modes), Y@num_modes)@data
-  flat_X <- unfold(X, setdiff(1:X@num_modes,X@num_modes), X@num_modes)@data
+  
+  laggedY <- tlag(Y, p)$lag_ten
+  origY <- tlag(Y, p)$original_ten
+  
+  full_modes <- c(origY@modes[-(origY@num_modes)], laggedY@modes[-(laggedY@num_modes)])
+  flat_Y <- unfold(origY, setdiff(1:origY@num_modes, origY@num_modes), origY@num_modes)@data
+  flat_X <- unfold(laggedY, setdiff(1:laggedY@num_modes,laggedY@num_modes), laggedY@num_modes)@data
   
   flat_OLS <- tcrossprod(flat_Y, flat_X) %*% MASS::ginv(tcrossprod(flat_X)) 
   

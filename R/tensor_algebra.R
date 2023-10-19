@@ -137,3 +137,27 @@ spark <- function(Phi) {
 rnorm_tnsr <- function(modes = c(3,4,5), sd = 1, drop = FALSE) {
   as.tensor(array(rnorm(prod(modes), sd = sd), dim = modes), drop = drop)
 }
+
+
+#' Tensor Lag Operator
+#' 
+#' Creates lags for a tensor of size N_1 x N_2 x T
+#'
+#' @param ten_data Data in tensor format
+#' @param p Number of lags
+#' 
+#' @return A list with the adjusted original matrix and the lagged tensor
+#' 
+#' @export
+tlag <- function(ten_data, p = 1) {
+  
+  obs <- ten_data@modes[ten_data@num_modes]
+  full_lags <- ten_data[,,(p+1):obs]
+  
+  for (i in 1:p) {
+    full_lags <- as.tensor(abind(full_lags@data, ten_data@data[,,(p-i+1):(obs-i)], along = 2))
+  }
+  
+  return(list(original_ten = full_lags[,1:ten_data@modes[2],],
+              lag_ten = full_lags[,(ten_data@modes[2]+1):full_lags@modes[2], ]))
+}
