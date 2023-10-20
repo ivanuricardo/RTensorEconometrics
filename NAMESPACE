@@ -1,5 +1,5 @@
 export("reconstruct_cp", "matrix_ols_sim", "ttt", "MAR", "cp_rank_selection",
        "tucker_rank_selection", "spark", "cp_uniqueness", "cp_regression",
        "cp_modified", "tucker_rebuild", "tucker_regression", "rnorm_tnsr", 
-       "ttv")
+       "ttv", "tlag")
 import(rTensor, abind, MASS)

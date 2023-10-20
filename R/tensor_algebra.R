@@ -149,6 +149,7 @@ rnorm_tnsr <- function(modes = c(3,4,5), sd = 1, drop = FALSE) {
 #' @return A list with the adjusted original matrix and the lagged tensor
 #' 
 #' @export
+#' @rdname tlag
 tlag <- function(ten_data, p = 1) {
   
   obs <- ten_data@modes[ten_data@num_modes]
