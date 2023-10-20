@@ -72,8 +72,8 @@ matrix_ols_sim <- function(obs, parameter_matrix, num_rows, num_cols) {
 #' @rdname MAR
 MAR <- function(Y, p) {
   # Check input types
-  if (!inherits(Y, "Tensor") || !inherits(X, "Tensor")) {
-    stop("Y and X must be tensors")
+  if (!inherits(Y, "Tensor")) {
+    stop("Y must be a tensor")
   }
   
   laggedY <- tlag(Y, p)$lag_ten
