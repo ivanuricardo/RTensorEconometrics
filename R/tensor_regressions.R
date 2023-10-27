@@ -386,7 +386,7 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
     pre_init_list <- init_list
     init_list[[3]] <- U2
     conv2 <- norm(pre_init_list[[3]] - init_list[[3]], type = "F")
-    if (conv1 < convThresh) {
+    if (conv2 < convThresh) {
       converged <- TRUE
       break
     }
@@ -395,7 +395,7 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
     pre_init_list <- init_list
     init_list[[4]] <- U3
     conv3 <- norm(pre_init_list[[4]] - init_list[[4]], type = "F")
-    if (conv1 < convThresh) {
+    if (conv3 < convThresh) {
       converged <- TRUE
       break
     }
@@ -404,7 +404,7 @@ tucker_regression <- function(Y, X, R, convThresh = 1e-04, max_iter = 400,
     pre_init_list <- init_list
     init_list[[5]] <- U4
     conv4 <- norm(pre_init_list[[5]] - init_list[[5]], type = "F")
-    if (conv1 < convThresh) {
+    if (conv4 < convThresh) {
       converged <- TRUE
       break
     }
